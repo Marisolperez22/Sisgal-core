@@ -12,8 +12,9 @@ export class Company {
   @Column('varchar', { length: 40, nullable: false })
   nit!: string;
 
-  @Column('boolean')
-  is_acive!: boolean;
+  @Column('varchar', { length: 40, nullable: false })
+  legal_rep!: string;
+
 
   @OneToMany(() => Branch, (branch) => branch.company)
   branches!: Branch[];

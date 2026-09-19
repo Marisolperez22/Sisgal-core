@@ -8,9 +8,6 @@ export class AttendanceRecord {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column('varchar', { length: 40, nullable: false })
-  name!: string;
-
   @Column('timestamp with time zone')
   check_in!: Date;
 
@@ -26,11 +23,11 @@ export class AttendanceRecord {
   @Column('int')
   night_minutes!: number;
 
-  @Column('boolean')
-  holiday_minutes!: boolean;
-
   @Column('int')
-  is_holiday!: number;
+  holiday_minutes!: number;
+
+  @Column('boolean')
+  is_holiday!: boolean;
 
   @ManyToOne(() => Employee, (employee) => employee.attendance_records) // relacion hacia la tabla EMPLOYEE
   @JoinColumn({ name: 'employee_id' })

@@ -2,7 +2,7 @@ import { Entity, Column,PrimaryColumn } from 'typeorm';
 
 
 @Entity()
-export class WorkRateConig{
+export class WorkRateConfig{
     @PrimaryColumn("varchar")
     type!: string;
 

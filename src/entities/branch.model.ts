@@ -24,11 +24,11 @@ export class Branch {
   nit!: string;
 
   @Column('boolean')
-  is_acive!: boolean;
+  is_active!: boolean;
 
   @ManyToOne(() => Company, (company) => company.branches)
   @JoinColumn({ name: 'company_id' })
-  company!: Company;
+  company!: Company; 
 
   @OneToMany(() => BranchConfig, (branchConfig) => branchConfig.branch)
   branchConfigs!: BranchConfig[];

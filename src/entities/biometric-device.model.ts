@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Branch } from './branch.model';
+import { AttendanceLog } from './attendance-log.model';
 
 @Entity()
 export class BiometricDevice {
@@ -18,9 +20,6 @@ export class BiometricDevice {
   @Column('int')
   port!: number;
 
-  @Column('boolean')
-  is_acive!: boolean;
-
   @Column('varchar', { length: 100, nullable: false })
   serial_number!: string;
 
@@ -30,4 +29,7 @@ export class BiometricDevice {
   @ManyToOne(() => Branch, (branch) => branch.biometricDevices)
   @JoinColumn({ name: 'branch_id' })
   branch!: Branch;
+
+  @OneToMany(() => AttendanceLog, (attendanceLog) => attendanceLog.biometricDevice)
+  attendanceLogs!: AttendanceLog[];
 }

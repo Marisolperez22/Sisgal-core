@@ -8,13 +8,10 @@ export class BranchConfig {
   id!: number;
 
   @Column('varchar', { length: 40, nullable: false })
-  name!: string;
+  config_key!: string;
 
   @Column('varchar', { length: 40, nullable: false })
-  nit!: string;
-
-  @Column('boolean')
-  is_acive!: boolean;
+  config_value!: string;
 
   @ManyToOne(() => Branch, (branch) => branch.branchConfigs)
   @JoinColumn({ name: 'branch_id' })

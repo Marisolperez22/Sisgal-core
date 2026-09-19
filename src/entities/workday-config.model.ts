@@ -7,10 +7,10 @@ export class WorkdayConfig{
     id!: number;
 
     @Column("int")
-    max_week_hour!:number;
+    max_week_hours!:number;
      
     @Column("int")
-    max_day_hour!:number;
+    max_day_hours!:number;
 
     @Column("time")
     day_start!:string;

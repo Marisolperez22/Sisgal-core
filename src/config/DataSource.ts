@@ -1,20 +1,20 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import 'dotenv/config'
 import { Employee } from '../entities/employee.model';
-import { AttendanceLog } from 'src/entities/attendance-log.model';
-import { AttendanceRecord } from 'src/entities/attendance-record.model';
-import { AttendanceRecordLog } from 'src/entities/attendance-record-log.model';
-import { BiometricDevice } from 'src/entities/biometric-device.model';
-import { BranchConfig } from 'src/entities/branch-config.model';
-import { Branch } from 'src/entities/branch.model';
-import { Company } from 'src/entities/company.model';
-import { DisabilityLeave } from 'src/entities/disability_leave.model';
-import { EmployeeBranchAssignment } from 'src/entities/employee-branch-assignment.model';
-import { PayrollLine } from 'src/entities/payroll_line.model';
-import { PayrollPeriod } from 'src/entities/payroll-period.model';
-import { SystemConfig } from 'src/entities/system-config.model';
-import { WorkRateConig } from 'src/entities/work-rate-config.model';
-import { WorkdayConfig } from 'src/entities/workday-config.model';
+import { AttendanceLog } from '../entities/attendance-log.model';
+import { AttendanceRecord } from '../entities/attendance-record.model';
+import { AttendanceRecordLog } from '../entities/attendance-record-log.model';
+import { BiometricDevice } from '../entities/biometric-device.model';
+import { BranchConfig } from '../entities/branch-config.model';
+import { Branch } from '../entities/branch.model';
+import { Company } from '../entities/company.model';
+import { DisabilityLeave } from '../entities/disability_leave.model';
+import { EmployeeBranchAssignment } from '../entities/employee-branch-assignment.model';
+import { PayrollLine } from '../entities/payroll_line.model';
+import { PayrollPeriod } from '../entities/payroll-period.model';
+import { SystemConfig } from '../entities/system-config.model';
+import { WorkRateConfig } from '../entities/work-rate-config.model';
+import { WorkdayConfig } from '../entities/workday-config.model';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -22,7 +22,7 @@ export const dataSourceOptions: DataSourceOptions = {
   synchronize: false,
   entities: [Employee, AttendanceLog, AttendanceRecord, AttendanceRecordLog,
     BiometricDevice, BranchConfig, Branch, Company, DisabilityLeave, EmployeeBranchAssignment,
-    PayrollLine, PayrollPeriod, SystemConfig, WorkRateConig, WorkdayConfig
+    PayrollLine, PayrollPeriod, SystemConfig, WorkRateConfig, WorkdayConfig
    ],
   ssl: { rejectUnauthorized: false },
   migrations: ['src/migrations/*.ts'],
