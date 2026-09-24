@@ -15,17 +15,31 @@ import { PayrollPeriod } from '../entities/payroll-period.model';
 import { SystemConfig } from '../entities/system-config.model';
 import { WorkRateConfig } from '../entities/work-rate-config.model';
 import { WorkdayConfig } from '../entities/workday-config.model';
+import { CreateCoreEntities1789782222297 } from '../migrations/1789782222297-CreateCoreEntities';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   url: process.env.SUPABASE_DB_URL,
   synchronize: false,
-  entities: [Employee, AttendanceLog, AttendanceRecord, AttendanceRecordLog,
-    BiometricDevice, BranchConfig, Branch, Company, DisabilityLeave, EmployeeBranchAssignment,
-    PayrollLine, PayrollPeriod, SystemConfig, WorkRateConfig, WorkdayConfig
-   ],
+  entities: [
+    Employee,
+    AttendanceLog,
+    AttendanceRecord,
+    AttendanceRecordLog,
+    BiometricDevice,
+    BranchConfig,
+    Branch,
+    Company,
+    DisabilityLeave,
+    EmployeeBranchAssignment,
+    PayrollLine,
+    PayrollPeriod,
+    SystemConfig,
+    WorkRateConfig,
+    WorkdayConfig,
+  ],
   ssl: { rejectUnauthorized: false },
-  migrations: ['src/migrations/*.ts'],
+  migrations: [CreateCoreEntities1789782222297],
 };
 
 export const AppDataSource = new DataSource(dataSourceOptions);
