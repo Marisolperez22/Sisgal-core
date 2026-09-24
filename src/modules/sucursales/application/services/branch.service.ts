@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   BRANCH_REPOSITORY_PORT,
   type BranchRepositoryPort,
@@ -20,5 +20,17 @@ export class BranchService {
   async obtenerActivas(): Promise<BranchResponseDto[]> {
     const sucursales = await this.branchRepository.findActivas();
     return sucursales.map((sucursal) => BranchResponseDto.fromEntity(sucursal));
+  }
+
+  async obtenerPorId(id: number): Promise<BranchResponseDto> {
+    const sucursal = await this.branchRepository.findById(id);
+
+    if (!sucursal) {
+      throw new NotFoundException(
+        `No se encontró una sucursal con el identificador ${id}.`,
+      );
+    }
+
+    return BranchResponseDto.fromEntity(sucursal);
   }
 }
