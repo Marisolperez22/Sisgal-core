@@ -20,11 +20,14 @@ export class Branch {
   @Column('varchar', { length: 40, nullable: false })
   name!: string;
 
-  @Column('varchar', { length: 40, nullable: false })
-  nit!: string;
+  @Column('varchar', { length: 60, nullable: false })
+  city!: string;
 
   @Column('boolean')
   is_active!: boolean;
+
+  @Column('int')
+  phone?: number;
 
   @ManyToOne(() => Company, (company) => company.branches)
   @JoinColumn({ name: 'company_id' })

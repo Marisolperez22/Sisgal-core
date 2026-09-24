@@ -1,6 +1,6 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import 'dotenv/config'
-import { Employee } from '../entities/employee.model';
+import { Employee } from '../modules/empleados/domain/entities/employee.model';
 import { AttendanceLog } from '../entities/attendance-log.model';
 import { AttendanceRecord } from '../entities/attendance-record.model';
 import { AttendanceRecordLog } from '../entities/attendance-record-log.model';

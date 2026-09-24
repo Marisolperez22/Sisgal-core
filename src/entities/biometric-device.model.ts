@@ -23,8 +23,8 @@ export class BiometricDevice {
   @Column('varchar', { length: 100, nullable: false })
   serial_number!: string;
 
-  @Column('varchar', { length: 100, nullable: false })
-  record_user!: string;
+  @Column('timestamp')
+  last_sync_at!: Date;
 
   @ManyToOne(() => Branch, (branch) => branch.biometricDevices)
   @JoinColumn({ name: 'branch_id' })

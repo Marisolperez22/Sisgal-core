@@ -1,9 +1,9 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-import { EmployeeBranchAssignment } from './employee-branch-assignment.model';
-import { PayrollPeriod } from './payroll-period.model';
-import { DisabilityLeave } from './disability_leave.model';
-import { AttendanceRecord } from './attendance-record.model';
-import { AttendanceLog } from './attendance-log.model';
+import { EmployeeBranchAssignment } from '../../../../entities/employee-branch-assignment.model';
+import { PayrollPeriod } from '../../../../entities/payroll-period.model';
+import { DisabilityLeave } from '../../../../entities/disability_leave.model';
+import { AttendanceRecord } from '../../../../entities/attendance-record.model';
+import { AttendanceLog } from '../../../../entities/attendance-log.model';
 
 @Entity()
 export class Employee {
@@ -19,7 +19,7 @@ export class Employee {
   @Column('varchar', { unique: true, nullable: false })
   cedula!: string;
 
-  @Column('decimal', { precision: 13, scale: 2, nullable: false })
+  @Column('decimal', { precision: 13, scale: 2, nullable: false })  
   salary_base!: number;
 
   @Column('varchar', { length: 40, nullable: false })

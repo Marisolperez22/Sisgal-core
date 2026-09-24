@@ -26,5 +26,5 @@ export class PayrollLine {
     (payrollPeriod) => payrollPeriod.payroll_lines,
   )
   @JoinColumn({ name: 'payroll_period_id' })
-  payroll_period!: PayrollPeriod; // singular
+  payroll_period!: PayrollPeriod; 
 }
