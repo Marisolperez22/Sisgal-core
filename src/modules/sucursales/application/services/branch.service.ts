@@ -16,4 +16,9 @@ export class BranchService {
     const sucursales = await this.branchRepository.findAll(soloActivas);
     return sucursales.map((sucursal) => BranchResponseDto.fromEntity(sucursal));
   }
+
+  async obtenerActivas(): Promise<BranchResponseDto[]> {
+    const sucursales = await this.branchRepository.findActivas();
+    return sucursales.map((sucursal) => BranchResponseDto.fromEntity(sucursal));
+  }
 }

@@ -27,6 +27,10 @@ export class BranchTypeOrmRepository implements BranchRepositoryPort {
     });
   }
 
+  async findActivas(): Promise<Branch[]> {
+    return this.findAll(true);
+  }
+
   async findById(id: number): Promise<Branch | null> {
     return this.repository.findOne({
       where: { id },
