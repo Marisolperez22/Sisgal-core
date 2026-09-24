@@ -10,4 +10,6 @@ export interface BranchRepositoryPort {
 
   create(branch: Branch): Promise<Branch>;
   update(branch: Branch): Promise<Branch>;
+
+  deactivate(id: number): Promise<void>;
 }

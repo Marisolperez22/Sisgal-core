@@ -9,7 +9,10 @@ import {
   type BranchRepositoryPort,
 } from '../../domain/ports/branch.repository.port';
 import { BranchResponseDto } from '../../infrastructure/http/dtos/branch-response.dto';
-import { ActualizarSucursalDto, CrearSucursalDto } from '../../infrastructure/http/dtos';
+import {
+  ActualizarSucursalDto,
+  CrearSucursalDto,
+} from '../../infrastructure/http/dtos';
 import { Branch } from 'src/entities';
 
 @Injectable()
@@ -108,5 +111,23 @@ export class BranchService {
     const sucursalActualizada = await this.branchRepository.update(sucursal);
 
     return BranchResponseDto.fromEntity(sucursalActualizada);
+  }
+
+  async eliminar(id: number): Promise<void> {
+    const sucursal = await this.branchRepository.findById(id);
+
+    if (!sucursal) {
+      throw new NotFoundException(
+        `No se encontró una sucursal con el identificador ${id}.`,
+      );
+    }
+
+    if (!sucursal.is_active) {
+      throw new ConflictException(
+        `La sucursal con el identificador ${id} ya se encuentra inactiva.`,
+      );
+    }
+
+    await this.branchRepository.deactivate(id);
   }
 }

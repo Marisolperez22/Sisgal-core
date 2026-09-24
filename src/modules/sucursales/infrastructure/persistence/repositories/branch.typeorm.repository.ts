@@ -54,4 +54,8 @@ export class BranchTypeOrmRepository implements BranchRepositoryPort {
   async update(branch: Branch): Promise<Branch> {
     return this.repository.save(branch);
   }
+
+  async deactivate(id: number): Promise<void> {
+    await this.repository.update({ id }, { is_active: false });
+  }
 }

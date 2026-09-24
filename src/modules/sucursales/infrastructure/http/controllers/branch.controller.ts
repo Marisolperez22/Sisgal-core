@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -16,6 +17,7 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -38,6 +40,8 @@ type BranchServiceLike = {
     id: number,
     dto: ActualizarSucursalDto,
   ) => Promise<BranchResponseDto>;
+
+  eliminar: (id: number) => Promise<void>;
 };
 
 @ApiTags('Sucursales')
@@ -201,5 +205,39 @@ export class BranchController {
     const branchService = this.branchService as unknown as BranchServiceLike;
 
     return branchService.actualizar(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Inactivar sucursal',
+    description:
+      'Inactiva una sucursal de forma lógica. El registro no se elimina físicamente de la base de datos, únicamente cambia su estado a inactivo.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Identificador único de la sucursal que se desea inactivar.',
+    example: 1,
+  })
+  @ApiNoContentResponse({
+    description: 'Sucursal inactivada correctamente.',
+  })
+  @ApiBadRequestResponse({
+    description: 'El identificador proporcionado no tiene un formato válido.',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró una sucursal con el identificador proporcionado.',
+  })
+  @ApiConflictResponse({
+    description: 'La sucursal ya se encuentra inactiva.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al inactivar la sucursal.',
+  })
+  async eliminar(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.eliminar(id);
   }
 }
