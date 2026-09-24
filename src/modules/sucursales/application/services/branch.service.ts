@@ -1,9 +1,11 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   BRANCH_REPOSITORY_PORT,
   type BranchRepositoryPort,
 } from '../../domain/ports/branch.repository.port';
 import { BranchResponseDto } from '../../infrastructure/http/dtos/branch-response.dto';
+import { CrearSucursalDto } from '../../infrastructure/http/dtos';
+import { Branch } from 'src/entities';
 
 @Injectable()
 export class BranchService {
@@ -32,5 +34,30 @@ export class BranchService {
     }
 
     return BranchResponseDto.fromEntity(sucursal);
+  }
+
+  async crear(
+    dto: CrearSucursalDto,
+  ): Promise<BranchResponseDto> {
+    const sucursalExistente =
+      await this.branchRepository.findByName(dto.nombre);
+
+    if (sucursalExistente) {
+      throw new ConflictException(
+        `Ya existe una sucursal con el nombre "${dto.nombre}".`,
+      );
+    }
+
+    const sucursal = new Branch();
+
+    sucursal.name = dto.nombre;
+
+    // Estos campos dependerán del modelo definitivo de la BD.
+    sucursal.is_active = true;
+
+    const sucursalCreada =
+      await this.branchRepository.create(sucursal);
+
+    return BranchResponseDto.fromEntity(sucursalCreada);
   }
 }

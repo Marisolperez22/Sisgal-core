@@ -1,9 +1,11 @@
-import { Controller, Get, Param, ParseIntPipe, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
 import { BranchService } from '../../../application/services/branch.service';
 import { BranchResponseDto } from '../dtos/branch-response.dto';
 
 import {
   ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -12,11 +14,13 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { CrearSucursalDto } from '../dtos';
 
 type BranchServiceLike = {
   obtenerActivas: () => Promise<BranchResponseDto[]>;
   obtenerTodas: (soloActivas?: boolean) => Promise<BranchResponseDto[]>;
   obtenerPorId: (id: number) => Promise<BranchResponseDto>;
+  crear: (dto: CrearSucursalDto) => Promise<BranchResponseDto>;
 };
 
 @ApiTags('Sucursales')
@@ -115,5 +119,31 @@ export class BranchController {
     const branchService = this.branchService as unknown as BranchServiceLike;
 
     return branchService.obtenerPorId(id);
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Crear sucursal',
+    description:
+      'Crea una nueva sucursal en el sistema utilizando la información proporcionada.',
+  })
+  @ApiCreatedResponse({
+    description: 'Sucursal creada correctamente.',
+    type: BranchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Los datos proporcionados no cumplen con las reglas de validación.',
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe una sucursal con el mismo nombre.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al crear la sucursal.',
+  })
+  async crear(@Body() dto: CrearSucursalDto): Promise<BranchResponseDto> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.crear(dto);
   }
 }

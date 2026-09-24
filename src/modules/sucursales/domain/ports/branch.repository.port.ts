@@ -7,4 +7,6 @@ export interface BranchRepositoryPort {
   findActivas(): Promise<Branch[]>;
   findById(id: number): Promise<Branch | null>;
   findByName(name: string): Promise<Branch | null>;
+
+  create(branch: Branch): Promise<Branch>;
 }
