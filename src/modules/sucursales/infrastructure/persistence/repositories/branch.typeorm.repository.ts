@@ -45,12 +45,13 @@ export class BranchTypeOrmRepository implements BranchRepositoryPort {
     });
   }
 
-  async create(
-    branch: Branch,
-  ): Promise<Branch> {
-    const nuevaSucursal =
-      this.repository.create(branch);
+  async create(branch: Branch): Promise<Branch> {
+    const nuevaSucursal = this.repository.create(branch);
 
     return this.repository.save(nuevaSucursal);
+  }
+
+  async update(branch: Branch): Promise<Branch> {
+    return this.repository.save(branch);
   }
 }

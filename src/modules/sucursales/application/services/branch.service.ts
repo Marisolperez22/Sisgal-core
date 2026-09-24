@@ -1,10 +1,15 @@
-import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   BRANCH_REPOSITORY_PORT,
   type BranchRepositoryPort,
 } from '../../domain/ports/branch.repository.port';
 import { BranchResponseDto } from '../../infrastructure/http/dtos/branch-response.dto';
-import { CrearSucursalDto } from '../../infrastructure/http/dtos';
+import { ActualizarSucursalDto, CrearSucursalDto } from '../../infrastructure/http/dtos';
 import { Branch } from 'src/entities';
 
 @Injectable()
@@ -36,11 +41,10 @@ export class BranchService {
     return BranchResponseDto.fromEntity(sucursal);
   }
 
-  async crear(
-    dto: CrearSucursalDto,
-  ): Promise<BranchResponseDto> {
-    const sucursalExistente =
-      await this.branchRepository.findByName(dto.nombre);
+  async crear(dto: CrearSucursalDto): Promise<BranchResponseDto> {
+    const sucursalExistente = await this.branchRepository.findByName(
+      dto.nombre,
+    );
 
     if (sucursalExistente) {
       throw new ConflictException(
@@ -55,9 +59,54 @@ export class BranchService {
     // Estos campos dependerán del modelo definitivo de la BD.
     sucursal.is_active = true;
 
-    const sucursalCreada =
-      await this.branchRepository.create(sucursal);
+    const sucursalCreada = await this.branchRepository.create(sucursal);
 
     return BranchResponseDto.fromEntity(sucursalCreada);
+  }
+
+  async actualizar(
+    id: number,
+    dto: ActualizarSucursalDto,
+  ): Promise<BranchResponseDto> {
+    const sucursal = await this.branchRepository.findById(id);
+
+    if (!sucursal) {
+      throw new NotFoundException(
+        `No se encontró una sucursal con el identificador ${id}.`,
+      );
+    }
+
+    if (dto.nombre !== undefined && dto.nombre !== sucursal.name) {
+      const sucursalExistente = await this.branchRepository.findByName(
+        dto.nombre,
+      );
+
+      if (sucursalExistente && sucursalExistente.id !== id) {
+        throw new ConflictException(
+          `Ya existe una sucursal con el nombre "${dto.nombre}".`,
+        );
+      }
+
+      sucursal.name = dto.nombre;
+    }
+
+    // Estos campos se mapearán cuando corrijamos
+    // la entidad de base de datos.
+    //
+    // if (dto.direccion !== undefined) {
+    //   sucursal.direccion = dto.direccion;
+    // }
+    //
+    // if (dto.telefono !== undefined) {
+    //   sucursal.telefono = dto.telefono;
+    // }
+    //
+    // if (dto.ciudad !== undefined) {
+    //   sucursal.ciudad = dto.ciudad;
+    // }
+
+    const sucursalActualizada = await this.branchRepository.update(sucursal);
+
+    return BranchResponseDto.fromEntity(sucursalActualizada);
   }
 }

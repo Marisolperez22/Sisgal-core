@@ -9,4 +9,5 @@ export interface BranchRepositoryPort {
   findByName(name: string): Promise<Branch | null>;
 
   create(branch: Branch): Promise<Branch>;
+  update(branch: Branch): Promise<Branch>;
 }

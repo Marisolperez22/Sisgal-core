@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { BranchService } from '../../../application/services/branch.service';
 import { BranchResponseDto } from '../dtos/branch-response.dto';
 
@@ -14,13 +23,21 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { CrearSucursalDto } from '../dtos';
+import { ActualizarSucursalDto, CrearSucursalDto } from '../dtos';
 
 type BranchServiceLike = {
   obtenerActivas: () => Promise<BranchResponseDto[]>;
+
   obtenerTodas: (soloActivas?: boolean) => Promise<BranchResponseDto[]>;
+
   obtenerPorId: (id: number) => Promise<BranchResponseDto>;
+
   crear: (dto: CrearSucursalDto) => Promise<BranchResponseDto>;
+
+  actualizar: (
+    id: number,
+    dto: ActualizarSucursalDto,
+  ) => Promise<BranchResponseDto>;
 };
 
 @ApiTags('Sucursales')
@@ -145,5 +162,44 @@ export class BranchController {
     const branchService = this.branchService as unknown as BranchServiceLike;
 
     return branchService.crear(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Actualizar sucursal',
+    description:
+      'Actualiza la información de una sucursal existente. Solo se modifican los campos enviados en la solicitud.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Identificador único de la sucursal que se desea actualizar.',
+    example: 1,
+  })
+  @ApiOkResponse({
+    description: 'Sucursal actualizada correctamente.',
+    type: BranchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'El identificador o los datos proporcionados no tienen un formato válido.',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró una sucursal con el identificador proporcionado.',
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe otra sucursal con el nombre proporcionado.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al actualizar la sucursal.',
+  })
+  async actualizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActualizarSucursalDto,
+  ): Promise<BranchResponseDto> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.actualizar(id, dto);
   }
 }
