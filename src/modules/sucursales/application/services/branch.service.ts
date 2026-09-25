@@ -19,6 +19,8 @@ import {
   COMPANY_REPOSITORY_PORT,
   type CompanyRepositoryPort,
 } from '../../domain/ports/company.repository.port';
+import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
+import type { AuditPort } from 'src/application/ports/audit/audit.port';
 
 @Injectable()
 export class BranchService {
@@ -28,6 +30,9 @@ export class BranchService {
 
     @Inject(COMPANY_REPOSITORY_PORT)
     private readonly companyRepository: CompanyRepositoryPort,
+
+    @Inject(AUDIT_PORT)
+    private readonly auditPort: AuditPort,
   ) {}
 
   async obtenerTodas(soloActivas?: boolean): Promise<BranchResponseDto[]> {
@@ -80,9 +85,38 @@ export class BranchService {
     sucursal.is_active = true;
     sucursal.company = company;
 
-    const sucursalCreada = await this.branchRepository.create(sucursal);
+    try {
+      const sucursalCreada = await this.branchRepository.create(sucursal);
 
-    return BranchResponseDto.fromEntity(sucursalCreada);
+      this.auditPort.log({
+        action: 'BRANCH_CREATED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        resourceId: sucursalCreada.id,
+        result: 'SUCCESS',
+        message: `Se creó la sucursal "${sucursalCreada.name}".`,
+        metadata: {
+          companyId: company.id,
+          city: sucursalCreada.city,
+        },
+      });
+
+      return BranchResponseDto.fromEntity(sucursalCreada);
+    } catch (error) {
+      this.auditPort.log({
+        action: 'BRANCH_CREATE_FAILED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        result: 'FAILED',
+        message: `Falló la creación de la sucursal "${dto.nombre}".`,
+        metadata: {
+          companyId: dto.companyId,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      throw error;
+    }
   }
 
   async actualizar(
@@ -97,17 +131,77 @@ export class BranchService {
       );
     }
 
-    if (dto.nombre !== undefined && dto.nombre !== sucursal.name) {
-      const sucursalExistente = await this.branchRepository.findByName(
-        dto.nombre,
+    const valoresAnteriores = this.obtenerValoresOriginales(sucursal);
+
+    try {
+      await this.validarNombreDuplicado(id, dto.nombre, sucursal.name);
+      this.actualizarCamposSucursal(sucursal, dto);
+
+      const sucursalActualizada = await this.branchRepository.update(sucursal);
+      const cambios = this.construirCambios(valoresAnteriores, sucursalActualizada);
+
+      this.auditPort.log({
+        action: 'BRANCH_UPDATED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        resourceId: sucursalActualizada.id,
+        result: 'SUCCESS',
+        message: `Se actualizó la sucursal "${sucursalActualizada.name}".`,
+        metadata: {
+          changes: cambios,
+        },
+      });
+
+      return BranchResponseDto.fromEntity(sucursalActualizada);
+    } catch (error) {
+      this.auditPort.log({
+        action: 'BRANCH_UPDATE_FAILED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        resourceId: id,
+        result: 'FAILED',
+        message: `Falló la actualización de la sucursal con identificador ${id}.`,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      throw error;
+    }
+  }
+
+  private obtenerValoresOriginales(sucursal: any) {
+    return {
+      nombre: sucursal.name,
+      ciudad: sucursal.city,
+      telefono: sucursal.phone,
+      direccion: sucursal.address,
+    };
+  }
+
+  private async validarNombreDuplicado(
+    id: number,
+    nombre: string | undefined,
+    nombreActual: string,
+  ): Promise<void> {
+    if (nombre === undefined || nombre === nombreActual) {
+      return;
+    }
+
+    const sucursalExistente = await this.branchRepository.findByName(nombre);
+
+    if (sucursalExistente && sucursalExistente.id !== id) {
+      throw new ConflictException(
+        `Ya existe una sucursal con el nombre "${nombre}".`,
       );
+    }
+  }
 
-      if (sucursalExistente && sucursalExistente.id !== id) {
-        throw new ConflictException(
-          `Ya existe una sucursal con el nombre "${dto.nombre}".`,
-        );
-      }
-
+  private actualizarCamposSucursal(
+    sucursal: any,
+    dto: ActualizarSucursalDto,
+  ): void {
+    if (dto.nombre !== undefined && dto.nombre !== sucursal.name) {
       sucursal.name = dto.nombre;
     }
 
@@ -122,10 +216,31 @@ export class BranchService {
     if (dto.ciudad !== undefined) {
       sucursal.city = dto.ciudad;
     }
+  }
 
-    const sucursalActualizada = await this.branchRepository.update(sucursal);
+  private construirCambios(
+    valoresAnteriores: Record<string, any>,
+    sucursalActualizada: any,
+  ): Record<string, unknown> {
+    const cambios: Record<string, unknown> = {};
 
-    return BranchResponseDto.fromEntity(sucursalActualizada);
+    const campos = [
+      ['nombre', 'name'],
+      ['ciudad', 'city'],
+      ['telefono', 'phone'],
+      ['direccion', 'address'],
+    ] as const;
+
+    for (const [clave, propiedad] of campos) {
+      if (valoresAnteriores[clave] !== sucursalActualizada[propiedad]) {
+        cambios[clave] = {
+          anterior: valoresAnteriores[clave],
+          nuevo: sucursalActualizada[propiedad],
+        };
+      }
+    }
+
+    return cambios;
   }
 
   async eliminar(id: number): Promise<void> {
@@ -160,6 +275,31 @@ export class BranchService {
       );
     }
 
-    await this.branchRepository.deactivate(id);
+    try {
+      await this.branchRepository.deactivate(id);
+
+      this.auditPort.log({
+        action: 'BRANCH_DEACTIVATED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        resourceId: id,
+        result: 'SUCCESS',
+        message: `Se inactivó la sucursal con identificador ${id}.`,
+      });
+    } catch (error) {
+      this.auditPort.log({
+        action: 'BRANCH_DEACTIVATE_FAILED',
+        module: 'Sucursales',
+        resource: 'Branch',
+        resourceId: id,
+        result: 'FAILED',
+        message: `Falló la inactivación de la sucursal con identificador ${id}.`,
+        metadata: {
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      throw error;
+    }
   }
 }

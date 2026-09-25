@@ -9,6 +9,8 @@ import { Company } from 'src/entities/company.model';
 import { COMPANY_REPOSITORY_PORT } from './domain/ports/company.repository.port';
 import { CompanyTypeOrmRepository } from './infrastructure/persistence/repositories/company-typeorm.repository';
 import { AttendanceRecord, EmployeeBranchAssignment } from 'src/entities';
+import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
+import { WinstonAuditAdapter } from 'src/infraestructure/logging/winston/winston-audit.adapter';
 
 @Module({
   imports: [
@@ -29,6 +31,10 @@ import { AttendanceRecord, EmployeeBranchAssignment } from 'src/entities';
     {
       provide: COMPANY_REPOSITORY_PORT,
       useClass: CompanyTypeOrmRepository,
+    },
+    {
+      provide: AUDIT_PORT,
+      useClass: WinstonAuditAdapter,
     },
   ],
   exports: [BranchService, BRANCH_REPOSITORY_PORT],
