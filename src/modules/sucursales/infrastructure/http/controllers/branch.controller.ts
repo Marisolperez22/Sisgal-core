@@ -26,6 +26,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ActualizarSucursalDto, CrearSucursalDto } from '../dtos';
+import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
 
 type BranchServiceLike = {
   obtenerActivas: () => Promise<BranchResponseDto[]>;
@@ -126,13 +127,16 @@ export class BranchController {
   })
   @ApiBadRequestResponse({
     description: 'El identificador proporcionado no tiene un formato válido.',
+    type: ErrorResponseDto,
   })
   @ApiNotFoundResponse({
     description:
       'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
   })
   @ApiInternalServerErrorResponse({
     description: 'Se produjo un error interno al consultar la sucursal.',
+    type: ErrorResponseDto,
   })
   obtenerPorId(
     @Param('id', ParseIntPipe) id: number,
@@ -155,12 +159,20 @@ export class BranchController {
   @ApiBadRequestResponse({
     description:
       'Los datos proporcionados no cumplen con las reglas de validación.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró la empresa asociada al identificador proporcionado.',
+    type: ErrorResponseDto,
   })
   @ApiConflictResponse({
     description: 'Ya existe una sucursal con el mismo nombre.',
+    type: ErrorResponseDto,
   })
   @ApiInternalServerErrorResponse({
     description: 'Se produjo un error interno al crear la sucursal.',
+    type: ErrorResponseDto,
   })
   async crear(@Body() dto: CrearSucursalDto): Promise<BranchResponseDto> {
     const branchService = this.branchService as unknown as BranchServiceLike;
@@ -187,16 +199,20 @@ export class BranchController {
   @ApiBadRequestResponse({
     description:
       'El identificador o los datos proporcionados no tienen un formato válido.',
+    type: ErrorResponseDto,
   })
   @ApiNotFoundResponse({
     description:
       'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
   })
   @ApiConflictResponse({
     description: 'Ya existe otra sucursal con el nombre proporcionado.',
+    type: ErrorResponseDto,
   })
   @ApiInternalServerErrorResponse({
     description: 'Se produjo un error interno al actualizar la sucursal.',
+    type: ErrorResponseDto,
   })
   async actualizar(
     @Param('id', ParseIntPipe) id: number,
@@ -224,16 +240,21 @@ export class BranchController {
   })
   @ApiBadRequestResponse({
     description: 'El identificador proporcionado no tiene un formato válido.',
+    type: ErrorResponseDto,
   })
   @ApiNotFoundResponse({
     description:
       'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
   })
   @ApiConflictResponse({
-    description: 'La sucursal ya se encuentra inactiva.',
+    description:
+      'No se puede desactivar la sucursal porque ya está inactiva, tiene empleados asociados o posee registros históricos asociados.',
+    type: ErrorResponseDto,
   })
   @ApiInternalServerErrorResponse({
     description: 'Se produjo un error interno al inactivar la sucursal.',
+    type: ErrorResponseDto,
   })
   async eliminar(@Param('id', ParseIntPipe) id: number): Promise<void> {
     const branchService = this.branchService as unknown as BranchServiceLike;
