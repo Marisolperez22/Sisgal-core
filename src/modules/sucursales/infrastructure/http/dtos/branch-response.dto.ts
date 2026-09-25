@@ -15,10 +15,24 @@ export class BranchResponseDto {
   name!: string;
 
   @ApiProperty({
-    description: 'NIT asociado a la sucursal',
-    example: '900123456-7',
+    description: 'Ciudad donde se encuentra ubicada la sucursal.',
+    example: 'Medellín',
   })
-  nit!: string;
+  city!: string;
+
+  @ApiProperty({
+    description: 'Número telefónico de la sucursal.',
+    example: '6041234567',
+    nullable: true,
+  })
+  phone?: string | null;
+
+  @ApiProperty({
+    description: 'Dirección física de la sucursal.',
+    example: 'Carrera 43A # 10-15',
+    nullable: true,
+  })
+  address!: string | null;
 
   @ApiProperty({
     description: 'Indica si la sucursal se encuentra activa',
@@ -45,8 +59,11 @@ export class BranchResponseDto {
 
     dto.id = entity.id;
     dto.name = entity.name;
-    dto.nit = entity.nit;
+    dto.city = entity.city;
+    dto.phone = entity.phone;
+    dto.address = entity.address;
     dto.is_active = entity.is_active;
+
     dto.companyId = entity.company ? entity.company.id : null;
     dto.companyName = entity.company ? entity.company.name : null;
 

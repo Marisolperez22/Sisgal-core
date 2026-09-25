@@ -12,4 +12,7 @@ export interface BranchRepositoryPort {
   update(branch: Branch): Promise<Branch>;
 
   deactivate(id: number): Promise<void>;
+
+  hasEmployees(id: number): Promise<boolean>;
+  hasHistoricalRecords(id: number): Promise<boolean>;
 }

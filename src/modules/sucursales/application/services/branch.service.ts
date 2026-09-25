@@ -15,11 +15,19 @@ import {
 } from '../../infrastructure/http/dtos';
 import { Branch } from 'src/entities';
 
+import {
+  COMPANY_REPOSITORY_PORT,
+  type CompanyRepositoryPort,
+} from '../../domain/ports/company.repository.port';
+
 @Injectable()
 export class BranchService {
   constructor(
     @Inject(BRANCH_REPOSITORY_PORT)
     private readonly branchRepository: BranchRepositoryPort,
+
+    @Inject(COMPANY_REPOSITORY_PORT)
+    private readonly companyRepository: CompanyRepositoryPort,
   ) {}
 
   async obtenerTodas(soloActivas?: boolean): Promise<BranchResponseDto[]> {
@@ -45,6 +53,14 @@ export class BranchService {
   }
 
   async crear(dto: CrearSucursalDto): Promise<BranchResponseDto> {
+    const company = await this.companyRepository.findById(dto.companyId);
+
+    if (!company) {
+      throw new NotFoundException(
+        `No se encontró una empresa con el identificador ${dto.companyId}.`,
+      );
+    }
+
     const sucursalExistente = await this.branchRepository.findByName(
       dto.nombre,
     );
@@ -58,9 +74,11 @@ export class BranchService {
     const sucursal = new Branch();
 
     sucursal.name = dto.nombre;
-
-    // Estos campos dependerán del modelo definitivo de la BD.
+    sucursal.city = dto.ciudad;
+    sucursal.phone = dto.telefono ?? null;
+    sucursal.address = dto.direccion;
     sucursal.is_active = true;
+    sucursal.company = company;
 
     const sucursalCreada = await this.branchRepository.create(sucursal);
 
@@ -93,20 +111,17 @@ export class BranchService {
       sucursal.name = dto.nombre;
     }
 
-    // Estos campos se mapearán cuando corrijamos
-    // la entidad de base de datos.
-    //
-    // if (dto.direccion !== undefined) {
-    //   sucursal.direccion = dto.direccion;
-    // }
-    //
-    // if (dto.telefono !== undefined) {
-    //   sucursal.telefono = dto.telefono;
-    // }
-    //
-    // if (dto.ciudad !== undefined) {
-    //   sucursal.ciudad = dto.ciudad;
-    // }
+    if (dto.direccion !== undefined) {
+      sucursal.address = dto.direccion;
+    }
+
+    if (dto.telefono !== undefined) {
+      sucursal.phone = dto.telefono;
+    }
+
+    if (dto.ciudad !== undefined) {
+      sucursal.city = dto.ciudad;
+    }
 
     const sucursalActualizada = await this.branchRepository.update(sucursal);
 
@@ -125,6 +140,23 @@ export class BranchService {
     if (!sucursal.is_active) {
       throw new ConflictException(
         `La sucursal con el identificador ${id} ya se encuentra inactiva.`,
+      );
+    }
+
+    const tieneEmpleados = await this.branchRepository.hasEmployees(id);
+
+    if (tieneEmpleados) {
+      throw new ConflictException(
+        'No se puede desactivar la sucursal porque tiene empleados asociados.',
+      );
+    }
+
+    const tieneRegistrosHistoricos =
+      await this.branchRepository.hasHistoricalRecords(id);
+
+    if (tieneRegistrosHistoricos) {
+      throw new ConflictException(
+        'No se puede desactivar la sucursal porque tiene registros asociados.',
       );
     }
 

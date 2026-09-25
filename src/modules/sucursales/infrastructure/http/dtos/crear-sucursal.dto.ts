@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -83,5 +84,14 @@ export class CrearSucursalDto {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  readonly ciudad?: string;
+  readonly ciudad!: string;
+
+  @ApiProperty({
+    description: 'Identificador de la empresa a la que pertenece la sucursal.',
+    example: 1,
+  })
+  @IsInt({
+    message: 'El identificador de la empresa debe ser un número entero',
+  })
+  readonly companyId!: number;
 }

@@ -5,15 +5,30 @@ import { BranchService } from './application/services/branch.service';
 import { BRANCH_REPOSITORY_PORT } from './domain/ports/branch.repository.port';
 import { BranchController } from './infrastructure/http/controllers/branch.controller';
 import { BranchTypeOrmRepository } from './infrastructure/persistence/repositories/branch.typeorm.repository';
+import { Company } from 'src/entities/company.model';
+import { COMPANY_REPOSITORY_PORT } from './domain/ports/company.repository.port';
+import { CompanyTypeOrmRepository } from './infrastructure/persistence/repositories/company-typeorm.repository';
+import { AttendanceRecord, EmployeeBranchAssignment } from 'src/entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Branch])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Branch,
+      Company,
+      EmployeeBranchAssignment,
+      AttendanceRecord,
+    ]),
+  ],
   controllers: [BranchController],
   providers: [
     BranchService,
     {
       provide: BRANCH_REPOSITORY_PORT,
       useClass: BranchTypeOrmRepository,
+    },
+    {
+      provide: COMPANY_REPOSITORY_PORT,
+      useClass: CompanyTypeOrmRepository,
     },
   ],
   exports: [BranchService, BRANCH_REPOSITORY_PORT],
