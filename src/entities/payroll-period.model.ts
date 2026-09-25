@@ -6,7 +6,7 @@ import {
   JoinColumn,
   OneToMany,
 } from 'typeorm';
-import { Employee } from '../modules/empleados/domain/entities/employee.model';
+import { Employee } from './employee.model';
 import { PayrollLine } from './payroll_line.model';
 
 @Entity()

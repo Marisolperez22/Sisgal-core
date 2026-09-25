@@ -1,4 +1,5 @@
-import { Entity, Column,PrimaryColumn, PrimaryGeneratedColumn } from 'typeorm';
+import { Employee } from './employee.model';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 
 
 @Entity()
@@ -30,5 +31,6 @@ export class WorkdayConfig{
     @Column("date")
     valid_to!:Date;
     
-
+    @OneToMany(() => Employee, (employee) => employee.workdayConfig)
+    employees!: Employee[];
 }

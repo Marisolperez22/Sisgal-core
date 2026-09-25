@@ -7,7 +7,7 @@ import {
   OneToMany,
   PrimaryColumn,
 } from 'typeorm';
-import { Employee } from '../modules/empleados/domain/entities/employee.model';
+import { Employee } from './employee.model';
 import { Branch } from './branch.model';
 
 @Entity()

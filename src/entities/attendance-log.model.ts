@@ -7,7 +7,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { AttendanceRecordLog } from './attendance-record-log.model';
-import { Employee } from '../modules/empleados/domain/entities/employee.model';
+import { Employee } from './employee.model';
 import { BiometricDevice } from './biometric-device.model';
 
 @Entity()

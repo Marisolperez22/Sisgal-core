@@ -1,6 +1,6 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany, ManyToOne, JoinColumn } from 'typeorm';
 import { Branch } from './branch.model';
-import { Employee } from '../modules/empleados/domain/entities/employee.model';
+import { Employee } from './employee.model';
 import { AttendanceRecordLog } from './attendance-record-log.model';
 
 @Entity()

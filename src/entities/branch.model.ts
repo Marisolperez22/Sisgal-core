@@ -23,6 +23,10 @@ export class Branch {
   @Column('varchar', { length: 60, nullable: false })
   city!: string;
 
+  @Column('varchar', { length: 60, nullable: false })
+  branch_addres!: string;
+
+
   @Column('boolean')
   is_active!: boolean;
 
