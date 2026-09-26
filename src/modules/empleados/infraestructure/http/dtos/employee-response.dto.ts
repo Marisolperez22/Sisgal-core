@@ -1,15 +1,66 @@
+import { ApiProperty } from '@nestjs/swagger';
 import { Employee } from '../../../../../entities/employee.model';
 
 export class EmployeeResponseDto {
+  @ApiProperty({
+    description: 'Identificador único del empleado',
+    example: 1,
+  })
   id!: number;
+
+  @ApiProperty({
+    description: 'Nombres del empleado',
+    example: 'Juan',
+  })
   firstName!: string;
+
+  @ApiProperty({
+    description: 'Apellidos del empleado',
+    example: 'Pérez',
+  })
   lastName!: string;
+
+  @ApiProperty({
+    description: 'Tipo de documento de identidad',
+    example: 'CC',
+  })
   documentType!: string;
+
+  @ApiProperty({
+    description: 'Número de documento',
+    example: '1020304050',
+  })
   document!: string;
+
+  @ApiProperty({
+    description: 'Número de teléfono del empleado',
+    example: '3001234567',
+  })
   phone!: string;
+
+  @ApiProperty({
+    description: 'Salario base mensual',
+    example: 1800000,
+  })
   salaryBase!: number;
+
+  @ApiProperty({
+    description: 'Cargo del empleado',
+    example: 'Auxiliar de cocina',
+  })
   position!: string;
+
+  @ApiProperty({
+    description: 'Estado del empleado',
+    example: 'ACTIVO',
+  })
   status!: string;
+
+  @ApiProperty({
+    description: 'Identificador de la sucursal vigente del empleado',
+    example: 1,
+    nullable: true,
+  })
   branchId!: number | null;
 
   static fromEntity(employee: Employee): EmployeeResponseDto {
