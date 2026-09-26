@@ -11,9 +11,11 @@ import { CompanyTypeOrmRepository } from './infrastructure/persistence/repositor
 import { AttendanceRecord, EmployeeBranchAssignment } from 'src/entities';
 import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
 import { WinstonAuditAdapter } from 'src/infraestructure/logging/winston/winston-audit.adapter';
+import { AuthModule } from 'src/infraestructure/auth/auth.module';
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([
       Branch,
       Company,

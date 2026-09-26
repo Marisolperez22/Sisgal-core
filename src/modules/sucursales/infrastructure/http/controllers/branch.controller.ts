@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { BranchService } from '../../../application/services/branch.service';
 import { BranchResponseDto } from '../dtos/branch-response.dto';
@@ -27,6 +28,10 @@ import {
 } from '@nestjs/swagger';
 import { ActualizarSucursalDto, CrearSucursalDto } from '../dtos';
 import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
+import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
+import { Roles } from 'src/infraestructure/auth/decorators/roles.decorator';
+import { Role } from 'src/application/ports/auth/auth-user';
 
 type BranchServiceLike = {
   obtenerActivas: () => Promise<BranchResponseDto[]>;
@@ -46,6 +51,8 @@ type BranchServiceLike = {
 };
 
 @ApiTags('Sucursales')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMINISTRADOR)
 @Controller(['sucursales'])
 export class BranchController {
   constructor(private readonly branchService: BranchService) {}
