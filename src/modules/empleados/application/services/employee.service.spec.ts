@@ -15,6 +15,10 @@ import {
   InvalidSalaryError,
 } from '../../domain/errors/employee.errors';
 
+import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
+import { Role } from 'src/application/ports/auth/auth-user';
+import type { AuthUser } from 'src/application/ports/auth/auth-user';
+
 import { Branch, Employee } from 'src/entities';
 
 describe('EmployeeService', () => {
@@ -34,6 +38,18 @@ describe('EmployeeService', () => {
     findById: jest.fn(),
   };
 
+  const auditPortMock: {
+    log: jest.Mock;
+  } = {
+    log: jest.fn(),
+  };
+
+  const actor: AuthUser = {
+    id: 'a1b2c3d4-uuid-admin',
+    email: 'admin@sisgal.com',
+    role: Role.ADMINISTRADOR,
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -45,6 +61,10 @@ describe('EmployeeService', () => {
         {
           provide: BRANCH_REPOSITORY_PORT,
           useValue: branchRepositoryMock,
+        },
+        {
+          provide: AUDIT_PORT,
+          useValue: auditPortMock,
         },
       ],
     }).compile();
@@ -78,7 +98,7 @@ describe('EmployeeService', () => {
     });
 
     it('debe registrar un empleado con estado ACTIVO', async () => {
-      const resultado = await service.register(crearDto());
+      const resultado = await service.register(crearDto(), actor);
 
       expect(resultado.id).toBe(5);
       expect(resultado.firstName).toBe('Juan');
@@ -97,7 +117,7 @@ describe('EmployeeService', () => {
       const sucursal = crearSucursal();
       branchRepositoryMock.findById.mockResolvedValue(sucursal);
 
-      const resultado = await service.register(crearDto());
+      const resultado = await service.register(crearDto(), actor);
 
       expect(resultado.employee_branch_assig).toHaveLength(1);
 
@@ -110,7 +130,7 @@ describe('EmployeeService', () => {
     });
 
     it('debe consultar el documento y la sucursal recibidos', async () => {
-      await service.register(crearDto({ branchId: 3 }));
+      await service.register(crearDto({ branchId: 3 }), actor);
 
       expect(employeeRepositoryMock.findByDocument).toHaveBeenCalledWith(
         '1020304050',
@@ -121,7 +141,7 @@ describe('EmployeeService', () => {
     it('debe lanzar DuplicateDocumentError cuando el documento ya existe', async () => {
       employeeRepositoryMock.findByDocument.mockResolvedValue(new Employee());
 
-      await expect(service.register(crearDto())).rejects.toThrow(
+      await expect(service.register(crearDto(), actor)).rejects.toThrow(
         DuplicateDocumentError,
       );
 
@@ -133,7 +153,7 @@ describe('EmployeeService', () => {
       branchRepositoryMock.findById.mockResolvedValue(null);
 
       await expect(
-        service.register(crearDto({ branchId: 99 })),
+        service.register(crearDto({ branchId: 99 }), actor),
       ).rejects.toThrow(NotFoundException);
 
       expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
@@ -144,7 +164,7 @@ describe('EmployeeService', () => {
         crearSucursal({ is_active: false }),
       );
 
-      await expect(service.register(crearDto())).rejects.toThrow(
+      await expect(service.register(crearDto(), actor)).rejects.toThrow(
         BadRequestException,
       );
 
@@ -153,7 +173,7 @@ describe('EmployeeService', () => {
 
     it('debe lanzar InvalidSalaryError cuando el salario no es mayor que cero', async () => {
       await expect(
-        service.register(crearDto({ salaryBase: 0 })),
+        service.register(crearDto({ salaryBase: 0 }), actor),
       ).rejects.toThrow(InvalidSalaryError);
 
       expect(employeeRepositoryMock.findByDocument).not.toHaveBeenCalled();
@@ -162,7 +182,7 @@ describe('EmployeeService', () => {
 
     it('debe lanzar EmptyDocumentNumberError cuando el documento está vacío', async () => {
       await expect(
-        service.register(crearDto({ documentNumber: '' })),
+        service.register(crearDto({ documentNumber: '' }), actor),
       ).rejects.toThrow(EmptyDocumentNumberError);
 
       expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
@@ -170,7 +190,7 @@ describe('EmployeeService', () => {
 
     it('debe lanzar InvalidDocumentFormatError cuando el documento no es numérico', async () => {
       await expect(
-        service.register(crearDto({ documentNumber: '12AB' })),
+        service.register(crearDto({ documentNumber: '12AB' }), actor),
       ).rejects.toThrow(InvalidDocumentFormatError);
 
       expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
@@ -179,7 +199,57 @@ describe('EmployeeService', () => {
     it('debe propagar el error cuando falla el guardado', async () => {
       employeeRepositoryMock.save.mockRejectedValue(new Error('Error de BD'));
 
-      await expect(service.register(crearDto())).rejects.toThrow('Error de BD');
+      await expect(service.register(crearDto(), actor)).rejects.toThrow('Error de BD');
+    });
+
+    // =========================================================
+    // Auditoría
+    // =========================================================
+
+    it('debe auditar el registro exitoso indicando quién lo realizó', async () => {
+      await service.register(crearDto({ branchId: 3 }), actor);
+
+      expect(auditPortMock.log).toHaveBeenCalledTimes(1);
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_CREATED',
+          module: 'Empleados',
+          resource: 'Employee',
+          resourceId: 5,
+          result: 'SUCCESS',
+          metadata: { branchId: 1, performedBy: actor.id },
+        }),
+      );
+    });
+
+    it('debe auditar el fallo cuando no se puede guardar el empleado', async () => {
+      employeeRepositoryMock.save.mockRejectedValue(new Error('Error de BD'));
+
+      await expect(service.register(crearDto(), actor)).rejects.toThrow(
+        'Error de BD',
+      );
+
+      expect(auditPortMock.log).toHaveBeenCalledTimes(1);
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_CREATE_FAILED',
+          result: 'FAILED',
+          metadata: expect.objectContaining({
+            performedBy: actor.id,
+            error: 'Error de BD',
+          }),
+        }),
+      );
+    });
+
+    it('no debe auditar cuando la validación falla antes de guardar', async () => {
+      employeeRepositoryMock.findByDocument.mockResolvedValue(new Employee());
+
+      await expect(service.register(crearDto(), actor)).rejects.toThrow(
+        DuplicateDocumentError,
+      );
+
+      expect(auditPortMock.log).not.toHaveBeenCalled();
     });
   });
 });

@@ -15,6 +15,9 @@ import {
   type BranchRepositoryPort,
 } from 'src/modules/sucursales/domain/ports/branch.repository.port';
 import { EmployeeBranchAssignment } from 'src/entities/employee-branch-assignment.model';
+import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
+import type { AuditPort } from 'src/application/ports/audit/audit.port';
+import type { AuthUser } from 'src/application/ports/auth/auth-user';
 
 @Injectable()
 export class EmployeeService {
@@ -24,9 +27,12 @@ export class EmployeeService {
 
     @Inject(BRANCH_REPOSITORY_PORT)
     private readonly branchRepository: BranchRepositoryPort,
+
+    @Inject(AUDIT_PORT)
+    private readonly auditPort: AuditPort,
   ) {}
 
-  async register(dto: RegisterEmployeeDto): Promise<Employee> {
+  async register(dto: RegisterEmployeeDto, actor: AuthUser): Promise<Employee> {
     // Los value objects validan tipo/número de documento y salario (lanzan error de dominio si son inválidos)
     const document = DocumentId.create(dto.documentType, dto.documentNumber);
     const salary = Salary.create(dto.salaryBase);
@@ -71,6 +77,39 @@ export class EmployeeService {
     // El cascade de la entidad guarda empleado y asignación en una sola transacción
     employee.employee_branch_assig = [assignment];
 
-    return this.employeeRepository.save(employee);
+    // Se audita el resultado del guardado, indicando quién realizó el registro
+    try {
+      const empleadoCreado = await this.employeeRepository.save(employee);
+
+      this.auditPort.log({
+        action: 'EMPLOYEE_CREATED',
+        module: 'Empleados',
+        resource: 'Employee',
+        resourceId: empleadoCreado.id,
+        result: 'SUCCESS',
+        message: `Se registró el empleado "${empleadoCreado.firstName} ${empleadoCreado.lastName}".`,
+        metadata: {
+          branchId: branch.id,
+          performedBy: actor.id,
+        },
+      });
+
+      return empleadoCreado;
+    } catch (error) {
+      this.auditPort.log({
+        action: 'EMPLOYEE_CREATE_FAILED',
+        module: 'Empleados',
+        resource: 'Employee',
+        result: 'FAILED',
+        message: 'Falló el registro de un empleado.',
+        metadata: {
+          branchId: dto.branchId,
+          performedBy: actor.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      throw error;
+    }
   }
 }

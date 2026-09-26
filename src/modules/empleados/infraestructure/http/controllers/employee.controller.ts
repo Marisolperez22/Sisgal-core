@@ -1,4 +1,5 @@
-import { BadRequestException, Body, ConflictException, Controller, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -15,6 +16,7 @@ import { EmployeeResponseDto } from '../dtos/employee-response.dto';
 import { DuplicateDocumentError, EmptyDocumentNumberError, InvalidDocumentFormatError, InvalidSalaryError } from 'src/modules/empleados/domain/errors/employee.errors';
 import { Roles } from '../../../../../infraestructure/auth/decorators/roles.decorator';
 import { Role } from '../../../../../application/ports/auth/auth-user';
+import type { AuthUser } from '../../../../../application/ports/auth/auth-user';
 import { JwtAuthGuard } from '../../../../../infraestructure/auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../../../../../infraestructure/auth/guards/roles.guard';
 
@@ -53,11 +55,14 @@ export class EmployeeController {
         description: 'Se produjo un error interno al registrar el empleado.',
         type: ErrorResponseDto,
     })
-    async register(@Body() dto: RegisterEmployeeDto): Promise<EmployeeResponseDto>{
+    async register(
+        @Body() dto: RegisterEmployeeDto,
+        @Req() request: Request & { user: AuthUser },
+    ): Promise<EmployeeResponseDto>{
         // Los errores de dominio se traducen a códigos HTTP (400 validación, 409 duplicado)
         try{
 
-            const employee = await this.employeeService.register(dto);
+            const employee = await this.employeeService.register(dto, request.user);
             return EmployeeResponseDto.fromEntity(employee);
 
         }catch(error){

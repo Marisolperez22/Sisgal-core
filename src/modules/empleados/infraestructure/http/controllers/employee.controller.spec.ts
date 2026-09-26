@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import type { Request } from 'express';
 
 import { EmployeeController } from './employee.controller';
 import { EmployeeService } from 'src/modules/empleados/application/services/employee.service';
@@ -21,6 +22,7 @@ import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
 import { ROLES_KEY } from 'src/infraestructure/auth/decorators/roles.decorator';
 import { Role } from 'src/application/ports/auth/auth-user';
+import type { AuthUser } from 'src/application/ports/auth/auth-user';
 
 import { Branch, Employee, EmployeeBranchAssignment } from 'src/entities';
 
@@ -89,7 +91,8 @@ describe('EmployeeController', () => {
       employeeServiceMock.register.mockResolvedValue(crearEmpleado());
 
       const dto = crearDto();
-      const resultado = await controller.register(dto);
+      const request = crearRequest();
+      const resultado = await controller.register(dto, request);
 
       expect(resultado).toBeInstanceOf(EmployeeResponseDto);
       expect(resultado).toEqual({
@@ -106,7 +109,10 @@ describe('EmployeeController', () => {
       });
 
       expect(employeeServiceMock.register).toHaveBeenCalledTimes(1);
-      expect(employeeServiceMock.register).toHaveBeenCalledWith(dto);
+      expect(employeeServiceMock.register).toHaveBeenCalledWith(
+        dto,
+        request.user,
+      );
     });
 
     it.each([
@@ -118,7 +124,7 @@ describe('EmployeeController', () => {
       async (_nombre, error: Error) => {
         employeeServiceMock.register.mockRejectedValue(error);
 
-        await expect(controller.register(crearDto())).rejects.toThrow(
+        await expect(controller.register(crearDto(), crearRequest())).rejects.toThrow(
           BadRequestException,
         );
       },
@@ -127,7 +133,7 @@ describe('EmployeeController', () => {
     it('debe conservar el mensaje del error de dominio', async () => {
       employeeServiceMock.register.mockRejectedValue(new InvalidSalaryError());
 
-      await expect(controller.register(crearDto())).rejects.toThrow(
+      await expect(controller.register(crearDto(), crearRequest())).rejects.toThrow(
         'El salario debe ser mayor que cero',
       );
     });
@@ -137,7 +143,7 @@ describe('EmployeeController', () => {
         new DuplicateDocumentError('1020304050'),
       );
 
-      await expect(controller.register(crearDto())).rejects.toThrow(
+      await expect(controller.register(crearDto(), crearRequest())).rejects.toThrow(
         ConflictException,
       );
     });
@@ -146,14 +152,14 @@ describe('EmployeeController', () => {
       const error = new NotFoundException('No se encontró la sucursal');
       employeeServiceMock.register.mockRejectedValue(error);
 
-      await expect(controller.register(crearDto())).rejects.toBe(error);
+      await expect(controller.register(crearDto(), crearRequest())).rejects.toBe(error);
     });
 
     it('debe propagar los errores inesperados', async () => {
       const error = new Error('Error inesperado');
       employeeServiceMock.register.mockRejectedValue(error);
 
-      await expect(controller.register(crearDto())).rejects.toBe(error);
+      await expect(controller.register(crearDto(), crearRequest())).rejects.toBe(error);
     });
   });
 });
@@ -161,6 +167,16 @@ describe('EmployeeController', () => {
 // =========================================================
 // Utilidades
 // =========================================================
+
+function crearRequest(): Request & { user: AuthUser } {
+  return {
+    user: {
+      id: 'a1b2c3d4-uuid-admin',
+      email: 'admin@sisgal.com',
+      role: Role.ADMINISTRADOR,
+    },
+  } as Request & { user: AuthUser };
+}
 
 function crearDto(): RegisterEmployeeDto {
   return {
