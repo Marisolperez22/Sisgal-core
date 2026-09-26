@@ -13,21 +13,29 @@
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:cov": "jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:cov": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.3",
+    "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.0.3",
     "@nestjs/platform-express": "^12.0.3",
+    "@nestjs/swagger": "^12.0.2",
     "@nestjs/typeorm": "^12.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
     "dotenv": "^17.4.2",
+    "jose": "^6.2.12",
+    "nest-winston": "^2.0.0",
     "pg": "^8.23.0",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "typeorm": "^1.1.1",
+    "winston": "^3.19.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -55,20 +63,38 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
-  }
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "src",
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "coverageDirectory": "../coverage",
+  "collectCoverageFrom": [
+    "**/*.(t|j)s",
+    "!**/*.module.ts",
+    "!**/*.entity.ts",
+    "!**/entities/**",
+    "!**/migrations/**",
+    "!**/database/**",
+    "!**/config/**",
+    "!**/configuration/**",
+    "!**/main.ts"
+  ],
+  "coveragePathIgnorePatterns": [
+    "/node_modules/",
+    "\\.module\\.ts$",
+    "\\.entity\\.ts$",
+    "/entities/",
+    "/migrations/",
+    "/database/",
+    "/config/",
+    "/configuration/",
+    "/main\\.ts$"
+  ],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/$1"
+  },
+  "testEnvironment": "node"
+}
 }

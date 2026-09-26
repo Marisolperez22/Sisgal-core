@@ -21,7 +21,13 @@ export class Branch {
   name!: string;
 
   @Column('varchar', { length: 40, nullable: false })
-  nit!: string;
+  city!: string
+
+  @Column('varchar', { length: 20, nullable: true })
+  phone?: string | null;
+
+  @Column('varchar', { length: 200, nullable: true })
+  address!: string;
 
   @Column('boolean')
   is_active!: boolean;
