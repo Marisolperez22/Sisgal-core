@@ -1,0 +1,279 @@
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import { BranchService } from '../../../application/services/branch.service';
+import { BranchResponseDto } from '../dtos/branch-response.dto';
+
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ActualizarSucursalDto, CrearSucursalDto } from '../dtos';
+import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
+import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
+import { Roles } from 'src/infraestructure/auth/decorators/roles.decorator';
+import { Role } from 'src/application/ports/auth/auth-user';
+
+type BranchServiceLike = {
+  obtenerActivas: () => Promise<BranchResponseDto[]>;
+
+  obtenerTodas: (soloActivas?: boolean) => Promise<BranchResponseDto[]>;
+
+  obtenerPorId: (id: number) => Promise<BranchResponseDto>;
+
+  crear: (dto: CrearSucursalDto) => Promise<BranchResponseDto>;
+
+  actualizar: (
+    id: number,
+    dto: ActualizarSucursalDto,
+  ) => Promise<BranchResponseDto>;
+
+  eliminar: (id: number) => Promise<void>;
+};
+
+@ApiTags('Sucursales')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(Role.ADMINISTRADOR)
+@Controller(['sucursales'])
+export class BranchController {
+  constructor(private readonly branchService: BranchService) {}
+
+  @Get('activas')
+  @ApiOperation({
+    summary: 'Obtener sucursales activas',
+    description:
+      'Obtiene todas las sucursales que se encuentran activas en el sistema.',
+  })
+  @ApiOkResponse({
+    description: 'Sucursales activas obtenidas correctamente.',
+    type: BranchResponseDto,
+    isArray: true,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al consultar las sucursales.',
+  })
+  obtenerActivas(): Promise<BranchResponseDto[]> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.obtenerActivas();
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Obtener sucursales',
+    description:
+      'Obtiene las sucursales registradas. Permite filtrar los resultados según su estado de activación mediante el parámetro "activas".',
+  })
+  @ApiQuery({
+    name: 'activas',
+    required: false,
+    type: Boolean,
+    description:
+      'Indica si se deben consultar únicamente las sucursales activas. Si no se proporciona, se retornan todas las sucursales.',
+    example: true,
+  })
+  @ApiOkResponse({
+    description: 'Sucursales obtenidas correctamente.',
+    type: BranchResponseDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'El valor proporcionado para el parámetro "activas" no es válido.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al consultar las sucursales.',
+  })
+  async obtenerTodas(
+    @Query('activas') activas?: string,
+  ): Promise<BranchResponseDto[]> {
+    let soloActivas: boolean | undefined;
+
+    if (activas === undefined) {
+      soloActivas = undefined;
+    } else if (activas === 'true') {
+      soloActivas = true;
+    } else if (activas === 'false') {
+      soloActivas = false;
+    } else {
+      throw new BadRequestException(
+        'El parámetro "activas" debe ser "true" o "false".',
+      );
+    }
+
+    return this.branchService.obtenerTodas(soloActivas);
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Obtener sucursal por ID',
+    description:
+      'Obtiene la información detallada de una sucursal mediante su identificador único.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Identificador único de la sucursal.',
+    example: 1,
+  })
+  @ApiOkResponse({
+    description: 'Sucursal obtenida correctamente.',
+    type: BranchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'El identificador proporcionado no tiene un formato válido.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al consultar la sucursal.',
+    type: ErrorResponseDto,
+  })
+  obtenerPorId(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<BranchResponseDto> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.obtenerPorId(id);
+  }
+
+  @Post()
+  @ApiOperation({
+    summary: 'Crear sucursal',
+    description:
+      'Crea una nueva sucursal en el sistema utilizando la información proporcionada.',
+  })
+  @ApiCreatedResponse({
+    description: 'Sucursal creada correctamente.',
+    type: BranchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Los datos proporcionados no cumplen con las reglas de validación.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró la empresa asociada al identificador proporcionado.',
+    type: ErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe una sucursal con el mismo nombre.',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al crear la sucursal.',
+    type: ErrorResponseDto,
+  })
+  async crear(@Body() dto: CrearSucursalDto): Promise<BranchResponseDto> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.crear(dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Actualizar sucursal',
+    description:
+      'Actualiza la información de una sucursal existente. Solo se modifican los campos enviados en la solicitud.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Identificador único de la sucursal que se desea actualizar.',
+    example: 1,
+  })
+  @ApiOkResponse({
+    description: 'Sucursal actualizada correctamente.',
+    type: BranchResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description:
+      'El identificador o los datos proporcionados no tienen un formato válido.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe otra sucursal con el nombre proporcionado.',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al actualizar la sucursal.',
+    type: ErrorResponseDto,
+  })
+  async actualizar(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActualizarSucursalDto,
+  ): Promise<BranchResponseDto> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.actualizar(id, dto);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: 'Inactivar sucursal',
+    description:
+      'Inactiva una sucursal de forma lógica. El registro no se elimina físicamente de la base de datos, únicamente cambia su estado a inactivo.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Identificador único de la sucursal que se desea inactivar.',
+    example: 1,
+  })
+  @ApiNoContentResponse({
+    description: 'Sucursal inactivada correctamente.',
+  })
+  @ApiBadRequestResponse({
+    description: 'El identificador proporcionado no tiene un formato válido.',
+    type: ErrorResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No se encontró una sucursal con el identificador proporcionado.',
+    type: ErrorResponseDto,
+  })
+  @ApiConflictResponse({
+    description:
+      'No se puede desactivar la sucursal porque ya está inactiva, tiene empleados asociados o posee registros históricos asociados.',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al inactivar la sucursal.',
+    type: ErrorResponseDto,
+  })
+  async eliminar(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    const branchService = this.branchService as unknown as BranchServiceLike;
+
+    return branchService.eliminar(id);
+  }
+}

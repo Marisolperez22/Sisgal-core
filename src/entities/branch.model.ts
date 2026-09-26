@@ -20,18 +20,17 @@ export class Branch {
   @Column('varchar', { length: 40, nullable: false })
   name!: string;
 
-  @Column('varchar', { length: 60, nullable: false })
-  city!: string;
+  @Column('varchar', { length: 40, nullable: false })
+  city!: string
 
-  @Column('varchar', { length: 60, nullable: false })
-  branch_addres!: string;
+  @Column('varchar', { length: 20, nullable: true })
+  phone?: string | null;
 
+  @Column('varchar', { length: 200, nullable: true })
+  address!: string;
 
   @Column('boolean')
   is_active!: boolean;
-
-  @Column('int')
-  phone?: number;
 
   @ManyToOne(() => Company, (company) => company.branches)
   @JoinColumn({ name: 'company_id' })
