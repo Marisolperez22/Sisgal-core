@@ -1,5 +1,5 @@
 import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
-import { DocumentType } from "src/modules/empleados/domain/value-objects/document-type.enum";
+import { DocumentType } from "../../../../../modules/empleados/domain/value-objects/document-type.enum";
 
 
 export class RegisterEmployeeDto {
