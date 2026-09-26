@@ -1,5 +1,4 @@
-import { Employee } from "../../../../../entities/employee.model";
-
+import { Employee } from '../../../../../entities/employee.model';
 
 export class EmployeeResponseDto {
   id!: number;
@@ -11,6 +10,7 @@ export class EmployeeResponseDto {
   salaryBase!: number;
   position!: string;
   status!: string;
+  branchId!: number | null;
 
   static fromEntity(employee: Employee): EmployeeResponseDto {
     const dto = new EmployeeResponseDto();
@@ -23,6 +23,8 @@ export class EmployeeResponseDto {
     dto.salaryBase = employee.salary_base;
     dto.position = employee.position;
     dto.status = employee.status;
+    const current = employee.employee_branch_assig?.find((a) => a.is_current);
+    dto.branchId = current ? current.branch.id : null;
     return dto;
   }
 }

@@ -1,6 +1,12 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from "class-validator";
-import { DocumentType } from "../../../../../modules/empleados/domain/value-objects/document-type.enum";
-
+import {
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Min,
+} from 'class-validator';
+import { DocumentType } from '../../../../../modules/empleados/domain/value-objects/document-type.enum';
 
 export class RegisterEmployeeDto {
   @IsString()
@@ -29,4 +35,8 @@ export class RegisterEmployeeDto {
   @IsString()
   @IsNotEmpty()
   position!: string;
+
+  @IsInt()
+  @Min(1)
+  branchId!: number;
 }

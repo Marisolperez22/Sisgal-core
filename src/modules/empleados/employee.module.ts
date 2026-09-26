@@ -5,9 +5,12 @@ import { EmployeeController } from './infraestructure/http/controllers/employee.
 import { EmployeeService } from './application/services/employee.service';
 import { EMPLOYEE_REPOSITORY_PORT } from './domain/ports/employee-repository.port';
 import { EmployeeTypeOrmRepository } from './infraestructure/persistence/repositories/employee.typeorm.repository';
+import { AuthModule } from '../../infraestructure/auth/auth.module';
+import { SucursalesModule } from '../sucursales/sucursales.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Employee])],
+    // AuthModule aporta los guards; SucursalesModule exporta el port para consultar sucursales
+    imports: [AuthModule, SucursalesModule,TypeOrmModule.forFeature([Employee])],
     controllers: [EmployeeController],
     providers: [
         EmployeeService,

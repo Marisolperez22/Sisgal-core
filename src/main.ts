@@ -14,6 +14,10 @@ async function bootstrap() {
     }),
   );
 
+  app.enableCors({
+    origin: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  });
+
   const config = new DocumentBuilder()
     .setTitle('Core API')
     .setDescription('The core API description')

@@ -46,11 +46,14 @@ export class Employee {
   @JoinColumn({ name: 'workday_config_id' })
   workdayConfig!: WorkdayConfig;
 
+  // Historial de sedes del empleado; cascade insert crea la asignación junto con el empleado
   @OneToMany(
-    () => EmployeeBranchAssignment,
-    (employee_branch_assig) => employee_branch_assig.employee,
+  () => EmployeeBranchAssignment,
+  (employee_branch_assig) => employee_branch_assig.employee,
+  { cascade: ['insert'] },
   )
-  employee_branch_assig!: EmployeeBranchAssignment[];
+employee_branch_assig!: EmployeeBranchAssignment[];
+
 
   @OneToMany(() => PayrollPeriod, (payroll_period) => payroll_period.employee)
   payroll_periods!: PayrollPeriod[];
