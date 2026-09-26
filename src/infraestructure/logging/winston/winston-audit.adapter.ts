@@ -1,13 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { createLogger, Logger } from 'winston';
+import { createLogger, format, Logger, transports } from 'winston';
 
 import { AuditLog } from '../../../application/ports/audit/audit-log';
 import { AuditPort } from '../../../application/ports/audit/audit.port';
-
-import {
-  auditFormat,
-  auditTransports,
-} from './logging.config';
 
 @Injectable()
 export class WinstonAuditAdapter implements AuditPort {
@@ -16,8 +11,16 @@ export class WinstonAuditAdapter implements AuditPort {
   constructor() {
     this.logger = createLogger({
       level: 'info',
-      format: auditFormat,
-      transports: auditTransports,
+      format: format.combine(
+        format.timestamp(),
+        format.json(),
+      ),
+      transports: [
+        new transports.Console(),
+        new transports.File({
+          filename: 'logs/audit.log',
+        }),
+      ],
     });
   }
 

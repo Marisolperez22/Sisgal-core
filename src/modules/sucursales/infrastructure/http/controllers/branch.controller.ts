@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -106,14 +107,21 @@ export class BranchController {
   async obtenerTodas(
     @Query('activas') activas?: string,
   ): Promise<BranchResponseDto[]> {
-    let soloActivas: boolean | undefined = undefined;
+    let soloActivas: boolean | undefined;
 
-    if (activas === 'true') soloActivas = true;
-    else if (activas === 'false') soloActivas = false;
+    if (activas === undefined) {
+      soloActivas = undefined;
+    } else if (activas === 'true') {
+      soloActivas = true;
+    } else if (activas === 'false') {
+      soloActivas = false;
+    } else {
+      throw new BadRequestException(
+        'El parámetro "activas" debe ser "true" o "false".',
+      );
+    }
 
-    const branchService = this.branchService as unknown as BranchServiceLike;
-
-    return branchService.obtenerTodas(soloActivas);
+    return this.branchService.obtenerTodas(soloActivas);
   }
 
   @Get(':id')

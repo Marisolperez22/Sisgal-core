@@ -63,20 +63,38 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "rootDir": "src",
-    "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
-  }
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "src",
+  "testRegex": ".*\\.spec\\.ts$",
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "coverageDirectory": "../coverage",
+  "collectCoverageFrom": [
+    "**/*.(t|j)s",
+    "!**/*.module.ts",
+    "!**/*.entity.ts",
+    "!**/entities/**",
+    "!**/migrations/**",
+    "!**/database/**",
+    "!**/config/**",
+    "!**/configuration/**",
+    "!**/main.ts"
+  ],
+  "coveragePathIgnorePatterns": [
+    "/node_modules/",
+    "\\.module\\.ts$",
+    "\\.entity\\.ts$",
+    "/entities/",
+    "/migrations/",
+    "/database/",
+    "/config/",
+    "/configuration/",
+    "/main\\.ts$"
+  ],
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/$1"
+  },
+  "testEnvironment": "node"
+}
 }
