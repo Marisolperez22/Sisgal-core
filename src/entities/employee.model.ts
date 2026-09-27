@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
+import { Position } from './position.model';
 import { EmployeeBranchAssignment } from './employee-branch-assignment.model';
 import { PayrollPeriod } from './payroll-period.model';
 import { DisabilityLeave } from './disability_leave.model';
@@ -22,8 +30,18 @@ export class Employee {
   @Column('decimal', { precision: 13, scale: 2, nullable: false })
   salary_base!: number;
 
+  /**
+   * Nombre del cargo al momento del registro. Se conserva como texto para no
+   * alterar la información histórica cuando el cargo del catálogo cambia (HU41 CA07).
+   */
   @Column('varchar', { length: 40, nullable: false })
   position!: string;
+
+  @ManyToOne(() => Position, (position) => position.employees, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'position_id' })
+  jobPosition?: Position | null;
 
   @Column('varchar', { length: 40, nullable: false })
   status!: string;

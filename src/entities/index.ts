@@ -13,3 +13,4 @@ export {PayrollPeriod} from './payroll-period.model';
 export {SystemConfig} from './system-config.model';
 export {WorkRateConfig} from './work-rate-config.model';
 export {WorkdayConfig} from './workday-config.model';
+export {Position} from './position.model';
