@@ -18,8 +18,10 @@ export class EmployeeBranchAssignment {
   @Column('date')
   start_date!: Date;
 
-  @Column('date')
-  end_date!: Date;
+  // null indica asignación vigente (aún sin fecha de fin)
+  @Column('date', { nullable: true })
+  end_date!: Date | null;
+
 
   @Column('boolean')
   is_current!: boolean;

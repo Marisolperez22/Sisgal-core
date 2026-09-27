@@ -12,6 +12,7 @@ import { PayrollPeriod } from './payroll-period.model';
 import { DisabilityLeave } from './disability_leave.model';
 import { AttendanceRecord } from './attendance-record.model';
 import { AttendanceLog } from './attendance-log.model';
+import { WorkdayConfig } from './workday-config.model';
 
 @Entity()
 export class Employee {
@@ -24,8 +25,14 @@ export class Employee {
   @Column('varchar', { length: 40, nullable: false })
   lastName!: string;
 
-  @Column('varchar', { unique: true, nullable: false })
-  cedula!: string;
+  @Column('varchar', { length: 40, unique: true, nullable: false })
+  document!: string;
+
+  @Column('varchar', { length: 40, nullable: false })
+  document_type!: string;
+
+  @Column('varchar', { length: 20, nullable: false })
+  phone!: string;
 
   @Column('decimal', { precision: 13, scale: 2, nullable: false })
   salary_base!: number;
@@ -46,9 +53,15 @@ export class Employee {
   @Column('varchar', { length: 40, nullable: false })
   status!: string;
 
+  @ManyToOne(() => WorkdayConfig, (workdayConfig) => workdayConfig.employees)
+  @JoinColumn({ name: 'workday_config_id' })
+  workdayConfig!: WorkdayConfig;
+
+  // Historial de sedes del empleado; cascade insert crea la asignación junto con el empleado
   @OneToMany(
     () => EmployeeBranchAssignment,
     (employee_branch_assig) => employee_branch_assig.employee,
+    { cascade: ['insert'] },
   )
   employee_branch_assig!: EmployeeBranchAssignment[];
 

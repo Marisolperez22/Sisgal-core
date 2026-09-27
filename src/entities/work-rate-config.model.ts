@@ -3,7 +3,7 @@ import { Entity, Column,PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class WorkRateConfig{
-    @PrimaryColumn("varchar")
+    @PrimaryColumn("varchar", {length:40})
     type!: string;
 
     @Column("decimal", {precision: 12, scale:2, nullable: false})

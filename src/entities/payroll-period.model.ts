@@ -30,7 +30,7 @@ export class PayrollPeriod {
   net_pay!: number;
 
   @Column('json')
-  config_snapshot!: Record<string, any>;
+  config_snapshot!: Record<string, unknown>;
 
   @ManyToOne(() => Employee, (employee) => employee.payroll_periods) // relacion hacia la tabla EMPLOYEE
   @JoinColumn({ name: 'employee_id' })

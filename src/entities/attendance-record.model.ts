@@ -8,20 +8,20 @@ export class AttendanceRecord {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column('timestamp with time zone')
+  @Column('timestamp')
   check_in!: Date;
 
-  @Column('timestamp with time zone')
+  @Column('timestamp')
   check_out!: Date;
 
   @Column('int')
   work_minutes!: number;
 
   @Column('int')
-  extra_minutes!: number;
+  extra_day_minutes!: number;
 
   @Column('int')
-  night_minutes!: number;
+  extra_night_minutes!: number;
 
   @Column('int')
   holiday_minutes!: number;

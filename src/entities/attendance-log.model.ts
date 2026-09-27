@@ -15,11 +15,11 @@ export class AttendanceLog {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column('timestamp with time zone')
+  @Column('timestamp')
   event_time!: Date;
 
   @Column('varchar', { length: 40, nullable: false })
-  event_sign!: string;
+  event_type!: string;
 
   @Column('varchar', { length: 40, nullable: false })
   idempotency_key!: string;
