@@ -6,6 +6,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
+import { Position } from './position.model';
 import { EmployeeBranchAssignment } from './employee-branch-assignment.model';
 import { PayrollPeriod } from './payroll-period.model';
 import { DisabilityLeave } from './disability_leave.model';
@@ -36,8 +37,18 @@ export class Employee {
   @Column('decimal', { precision: 13, scale: 2, nullable: false })
   salary_base!: number;
 
+  /**
+   * Nombre del cargo al momento del registro. Se conserva como texto para no
+   * alterar la información histórica cuando el cargo del catálogo cambia (HU41 CA07).
+   */
   @Column('varchar', { length: 40, nullable: false })
   position!: string;
+
+  @ManyToOne(() => Position, (position) => position.employees, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'position_id' })
+  jobPosition?: Position | null;
 
   @Column('varchar', { length: 40, nullable: false })
   status!: string;
@@ -48,12 +59,11 @@ export class Employee {
 
   // Historial de sedes del empleado; cascade insert crea la asignación junto con el empleado
   @OneToMany(
-  () => EmployeeBranchAssignment,
-  (employee_branch_assig) => employee_branch_assig.employee,
-  { cascade: ['insert'] },
+    () => EmployeeBranchAssignment,
+    (employee_branch_assig) => employee_branch_assig.employee,
+    { cascade: ['insert'] },
   )
-employee_branch_assig!: EmployeeBranchAssignment[];
-
+  employee_branch_assig!: EmployeeBranchAssignment[];
 
   @OneToMany(() => PayrollPeriod, (payroll_period) => payroll_period.employee)
   payroll_periods!: PayrollPeriod[];
