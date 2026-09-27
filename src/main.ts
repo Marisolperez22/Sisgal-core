@@ -6,11 +6,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Orígenes del frontend separados por coma; por defecto, el dev server de Vite.
   app.enableCors({
-    origin: (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
-      .split(',')
-      .map((origin) => origin.trim()),
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
