@@ -16,6 +16,7 @@ import { BranchResponseDto } from '../dtos/branch-response.dto';
 
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
@@ -53,6 +54,7 @@ type BranchServiceLike = {
 
 @ApiTags('Sucursales')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@ApiBearerAuth()
 @Roles(Role.ADMINISTRADOR)
 @Controller(['sucursales'])
 export class BranchController {

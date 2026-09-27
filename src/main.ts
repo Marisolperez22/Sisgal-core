@@ -11,6 +11,9 @@ async function bootstrap() {
     origin: (process.env.CORS_ORIGINS ?? 'http://localhost:5173')
       .split(',')
       .map((origin) => origin.trim()),
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   });
 
   // Ejecuta las validaciones de class-validator declaradas en los DTOs.
@@ -26,7 +29,11 @@ async function bootstrap() {
     .setTitle('Core API')
     .setDescription('The core API description')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    })
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, documentFactory);
