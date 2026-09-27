@@ -60,12 +60,13 @@ export class RegisterEmployeeDto {
   salaryBase!: number;
 
   @ApiProperty({
-    description: 'Cargo del empleado',
-    example: 'Auxiliar de cocina',
+    description: 'Identificador del cargo activo asignado al empleado',
+    example: 1,
+    minimum: 1,
   })
-  @IsString()
-  @IsNotEmpty()
-  position!: string;
+  @IsInt()
+  @Min(1)
+  positionId!: number;
 
   @ApiProperty({
     description: 'Identificador de la sucursal activa donde se asigna el empleado',

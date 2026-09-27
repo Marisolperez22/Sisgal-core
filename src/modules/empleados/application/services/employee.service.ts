@@ -14,6 +14,10 @@ import {
   BRANCH_REPOSITORY_PORT,
   type BranchRepositoryPort,
 } from 'src/modules/sucursales/domain/ports/branch.repository.port';
+import {
+  POSITION_REPOSITORY_PORT,
+  type PositionRepositoryPort,
+} from '../../domain/ports/position.repository.port';
 import { EmployeeBranchAssignment } from 'src/entities/employee-branch-assignment.model';
 import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
 import type { AuditPort } from 'src/application/ports/audit/audit.port';
@@ -27,6 +31,9 @@ export class EmployeeService {
 
     @Inject(BRANCH_REPOSITORY_PORT)
     private readonly branchRepository: BranchRepositoryPort,
+
+    @Inject(POSITION_REPOSITORY_PORT)
+    private readonly positionRepository: PositionRepositoryPort,
 
     @Inject(AUDIT_PORT)
     private readonly auditPort: AuditPort,
@@ -58,6 +65,21 @@ export class EmployeeService {
       );
     }
 
+    // El cargo es obligatorio: debe existir y estar activo (catálogo de HU41)
+    const jobPosition = await this.positionRepository.findById(
+      dto.positionId,
+    );
+    if (!jobPosition) {
+      throw new NotFoundException(
+        `No se encontró un cargo con el identificador ${dto.positionId}.`,
+      );
+    }
+    if (!jobPosition.is_active) {
+      throw new BadRequestException(
+        `El cargo con identificador ${dto.positionId} está inactivo.`,
+      );
+    }
+
     // Asignación inicial de sede: vigente (is_current) y sin fecha de fin (end_date null)
     const assignment = new EmployeeBranchAssignment();
     assignment.branch = branch;
@@ -72,7 +94,9 @@ export class EmployeeService {
     employee.document_type = document.getType();
     employee.phone = dto.phone;
     employee.salary_base = salary.getvalue();
-    employee.position = dto.position;
+    // "position" queda como copia histórica del nombre; "jobPosition" es el vínculo vivo al catálogo
+    employee.position = jobPosition.name;
+    employee.jobPosition = jobPosition;
     employee.status = 'ACTIVO';
     // El cascade de la entidad guarda empleado y asignación en una sola transacción
     employee.employee_branch_assig = [assignment];
@@ -90,6 +114,7 @@ export class EmployeeService {
         message: `Se registró el empleado "${empleadoCreado.firstName} ${empleadoCreado.lastName}".`,
         metadata: {
           branchId: branch.id,
+          positionId: jobPosition.id,
           performedBy: actor.id,
         },
       });
@@ -104,6 +129,7 @@ export class EmployeeService {
         message: 'Falló el registro de un empleado.',
         metadata: {
           branchId: dto.branchId,
+          positionId: dto.positionId,
           performedBy: actor.id,
           error: error instanceof Error ? error.message : String(error),
         },

@@ -63,6 +63,13 @@ export class EmployeeResponseDto {
   })
   branchId!: number | null;
 
+  @ApiProperty({
+    description: 'Identificador del cargo asignado del catálogo de cargos',
+    example: 1,
+    nullable: true,
+  })
+  positionId!: number | null;
+
   static fromEntity(employee: Employee): EmployeeResponseDto {
     const dto = new EmployeeResponseDto();
     dto.id = employee.id;
@@ -76,6 +83,7 @@ export class EmployeeResponseDto {
     dto.status = employee.status;
     const current = employee.employee_branch_assig?.find((a) => a.is_current);
     dto.branchId = current ? current.branch.id : null;
+    dto.positionId = employee.jobPosition ? employee.jobPosition.id : null;
     return dto;
   }
 }

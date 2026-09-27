@@ -5,6 +5,7 @@ import { EmployeeService } from './employee.service';
 
 import { EMPLOYEE_REPOSITORY_PORT } from '../../domain/ports/employee-repository.port';
 import { BRANCH_REPOSITORY_PORT } from 'src/modules/sucursales/domain/ports/branch.repository.port';
+import { POSITION_REPOSITORY_PORT } from '../../domain/ports/position.repository.port';
 
 import { RegisterEmployeeDto } from '../../infraestructure/http/dtos/register-employee.dto';
 import { DocumentType } from '../../domain/value-objects/document-type.enum';
@@ -19,7 +20,7 @@ import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
 import { Role } from 'src/application/ports/auth/auth-user';
 import type { AuthUser } from 'src/application/ports/auth/auth-user';
 
-import { Branch, Employee } from 'src/entities';
+import { Branch, Employee, Position } from 'src/entities';
 
 describe('EmployeeService', () => {
   let service: EmployeeService;
@@ -33,6 +34,12 @@ describe('EmployeeService', () => {
   };
 
   const branchRepositoryMock: {
+    findById: jest.Mock;
+  } = {
+    findById: jest.fn(),
+  };
+
+  const positionRepositoryMock: {
     findById: jest.Mock;
   } = {
     findById: jest.fn(),
@@ -61,6 +68,10 @@ describe('EmployeeService', () => {
         {
           provide: BRANCH_REPOSITORY_PORT,
           useValue: branchRepositoryMock,
+        },
+        {
+          provide: POSITION_REPOSITORY_PORT,
+          useValue: positionRepositoryMock,
         },
         {
           provide: AUDIT_PORT,
@@ -92,6 +103,7 @@ describe('EmployeeService', () => {
     beforeEach(() => {
       employeeRepositoryMock.findByDocument.mockResolvedValue(null);
       branchRepositoryMock.findById.mockResolvedValue(crearSucursal());
+      positionRepositoryMock.findById.mockResolvedValue(crearCargo());
       employeeRepositoryMock.save.mockImplementation((empleado: Employee) =>
         Promise.resolve(Object.assign(empleado, { id: 5 })),
       );
@@ -107,10 +119,22 @@ describe('EmployeeService', () => {
       expect(resultado.document_type).toBe(DocumentType.CC);
       expect(resultado.phone).toBe('3001234567');
       expect(resultado.salary_base).toBe(1800000);
-      expect(resultado.position).toBe('Auxiliar de cocina');
       expect(resultado.status).toBe('ACTIVO');
 
       expect(employeeRepositoryMock.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('debe guardar el nombre del cargo como copia histórica y vincular el catálogo', async () => {
+      const cargo = crearCargo({ id: 2, name: 'Auxiliar de cocina' });
+      positionRepositoryMock.findById.mockResolvedValue(cargo);
+
+      const resultado = await service.register(
+        crearDto({ positionId: 2 }),
+        actor,
+      );
+
+      expect(resultado.position).toBe('Auxiliar de cocina');
+      expect(resultado.jobPosition).toBe(cargo);
     });
 
     it('debe crear la asignación inicial de sucursal como vigente y sin fecha de fin', async () => {
@@ -129,13 +153,14 @@ describe('EmployeeService', () => {
       expect(asignacion.start_date).toBeInstanceOf(Date);
     });
 
-    it('debe consultar el documento y la sucursal recibidos', async () => {
-      await service.register(crearDto({ branchId: 3 }), actor);
+    it('debe consultar el documento, la sucursal y el cargo recibidos', async () => {
+      await service.register(crearDto({ branchId: 3, positionId: 4 }), actor);
 
       expect(employeeRepositoryMock.findByDocument).toHaveBeenCalledWith(
         '1020304050',
       );
       expect(branchRepositoryMock.findById).toHaveBeenCalledWith(3);
+      expect(positionRepositoryMock.findById).toHaveBeenCalledWith(4);
     });
 
     it('debe lanzar DuplicateDocumentError cuando el documento ya existe', async () => {
@@ -162,6 +187,28 @@ describe('EmployeeService', () => {
     it('debe lanzar BadRequestException cuando la sucursal está inactiva', async () => {
       branchRepositoryMock.findById.mockResolvedValue(
         crearSucursal({ is_active: false }),
+      );
+
+      await expect(service.register(crearDto(), actor)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar NotFoundException cuando el cargo no existe', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.register(crearDto({ positionId: 99 }), actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando el cargo está inactivo', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(
+        crearCargo({ is_active: false }),
       );
 
       await expect(service.register(crearDto(), actor)).rejects.toThrow(
@@ -217,7 +264,7 @@ describe('EmployeeService', () => {
           resource: 'Employee',
           resourceId: 5,
           result: 'SUCCESS',
-          metadata: { branchId: 1, performedBy: actor.id },
+          metadata: { branchId: 1, positionId: 1, performedBy: actor.id },
         }),
       );
     });
@@ -268,7 +315,7 @@ function crearDto(
     documentNumber: '1020304050',
     phone: '3001234567',
     salaryBase: 1800000,
-    position: 'Auxiliar de cocina',
+    positionId: 1,
     branchId: 1,
     ...overrides,
   };
@@ -278,6 +325,15 @@ function crearSucursal(overrides: Partial<Branch> = {}): Branch {
   return Object.assign(new Branch(), {
     id: 1,
     name: 'Sucursal Centro',
+    is_active: true,
+    ...overrides,
+  });
+}
+
+function crearCargo(overrides: Partial<Position> = {}): Position {
+  return Object.assign(new Position(), {
+    id: 1,
+    name: 'Auxiliar de cocina',
     is_active: true,
     ...overrides,
   });

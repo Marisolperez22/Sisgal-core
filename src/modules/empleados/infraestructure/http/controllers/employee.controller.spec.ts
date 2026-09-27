@@ -24,7 +24,7 @@ import { ROLES_KEY } from 'src/infraestructure/auth/decorators/roles.decorator';
 import { Role } from 'src/application/ports/auth/auth-user';
 import type { AuthUser } from 'src/application/ports/auth/auth-user';
 
-import { Branch, Employee, EmployeeBranchAssignment } from 'src/entities';
+import { Branch, Employee, EmployeeBranchAssignment, Position } from 'src/entities';
 
 describe('EmployeeController', () => {
   let controller: EmployeeController;
@@ -106,6 +106,7 @@ describe('EmployeeController', () => {
         position: 'Auxiliar de cocina',
         status: 'ACTIVO',
         branchId: 3,
+        positionId: 1,
       });
 
       expect(employeeServiceMock.register).toHaveBeenCalledTimes(1);
@@ -186,7 +187,7 @@ function crearDto(): RegisterEmployeeDto {
     documentNumber: '1020304050',
     phone: '3001234567',
     salaryBase: 1800000,
-    position: 'Auxiliar de cocina',
+    positionId: 1,
     branchId: 3,
   };
 }
@@ -207,6 +208,7 @@ function crearEmpleado(): Employee {
     phone: '3001234567',
     salary_base: 1800000,
     position: 'Auxiliar de cocina',
+    jobPosition: Object.assign(new Position(), { id: 1 }),
     status: 'ACTIVO',
     employee_branch_assig: [asignacion],
   });
