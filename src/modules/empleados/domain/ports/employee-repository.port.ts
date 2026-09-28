@@ -13,4 +13,5 @@ export interface EmployeeRepositoryPort {
   save(employee: Employee): Promise<Employee>;
   findByDocument(document: string): Promise<Employee | null>;
   findAll(filters: EmployeeListFilters): Promise<Employee[]>;
+  findById(id: number): Promise<Employee | null>;
 }

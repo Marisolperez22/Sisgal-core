@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
@@ -14,6 +14,7 @@ import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
 import { EmployeeService } from 'src/modules/empleados/application/services/employee.service';
 import { RegisterEmployeeDto } from '../dtos/register-employee.dto';
 import { ListEmployeesQueryDto } from '../dtos/list-employees-query.dto';
+import { UpdateEmployeeDto } from '../dtos/update-employee.dto';
 import { EmployeeResponseDto } from '../dtos/employee-response.dto';
 import { DuplicateDocumentError, EmptyDocumentNumberError, InvalidDocumentFormatError, InvalidSalaryError } from 'src/modules/empleados/domain/errors/employee.errors';
 import { Roles } from '../../../../../infraestructure/auth/decorators/roles.decorator';
@@ -99,5 +100,52 @@ export class EmployeeController {
     })
     async findAll(@Query() query: ListEmployeesQueryDto): Promise<EmployeeResponseDto[]> {
         return this.employeeService.findAll(query);
+    }
+
+    @Patch(':id')
+    @ApiOperation({
+        summary: 'Editar información de empleado',
+        description:
+            'Actualiza los datos de un empleado. La sucursal no se edita por este medio.',
+    })
+    @ApiOkResponse({
+        description: 'Empleado actualizado correctamente.',
+        type: EmployeeResponseDto,
+    })
+    @ApiBadRequestResponse({
+        description: 'Datos inválidos (salario, formato de documento) o cargo inactivo.',
+        type: ErrorResponseDto,
+    })
+    @ApiNotFoundResponse({
+        description: 'No se encontró el empleado o el cargo indicado.',
+        type: ErrorResponseDto,
+    })
+    @ApiConflictResponse({
+        description: 'Ya existe otro empleado registrado con ese documento.',
+        type: ErrorResponseDto,
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Se produjo un error interno al actualizar el empleado.',
+        type: ErrorResponseDto,
+    })
+    async update(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateEmployeeDto,
+        @Req() request: Request & { user: AuthUser },
+    ): Promise<EmployeeResponseDto> {
+        try {
+            return await this.employeeService.update(id, dto, request.user);
+        } catch (error) {
+            if (error instanceof InvalidSalaryError ||
+                error instanceof EmptyDocumentNumberError ||
+                error instanceof InvalidDocumentFormatError
+            ) { throw new BadRequestException(error.message); }
+
+            if (error instanceof DuplicateDocumentError) {
+                throw new ConflictException(error.message);
+            }
+
+            throw error;
+        }
     }
 }

@@ -7,6 +7,7 @@ import {
 import * as employeeRepositoryPort from '../../domain/ports/employee-repository.port';
 import { RegisterEmployeeDto } from '../../infraestructure/http/dtos/register-employee.dto';
 import { ListEmployeesQueryDto } from '../../infraestructure/http/dtos/list-employees-query.dto';
+import { UpdateEmployeeDto } from '../../infraestructure/http/dtos/update-employee.dto';
 import { EmployeeResponseDto } from '../../infraestructure/http/dtos/employee-response.dto';
 import { Employee } from 'src/entities/employee.model';
 import { DocumentId } from '../../domain/value-objects/document-id.vo';
@@ -145,5 +146,91 @@ export class EmployeeService {
   async findAll(query: ListEmployeesQueryDto): Promise<EmployeeResponseDto[]> {
     const employees = await this.employeeRepository.findAll(query);
     return employees.map((employee) => EmployeeResponseDto.fromEntity(employee));
+  }
+
+  // La sucursal no se edita aquí: cambiarla implica cerrar la asignación
+  // vigente y abrir una nueva, lógica que todavía no existe.
+  async update(
+    id: number,
+    dto: UpdateEmployeeDto,
+    actor: AuthUser,
+  ): Promise<EmployeeResponseDto> {
+    const employee = await this.employeeRepository.findById(id);
+    if (!employee) {
+      throw new NotFoundException(
+        `No se encontró un empleado con el identificador ${id}.`,
+      );
+    }
+
+    // El documento se edita solo si mandan ambos campos (tipo y número)
+    if (dto.documentType !== undefined && dto.documentNumber !== undefined) {
+      const document = DocumentId.create(dto.documentType, dto.documentNumber);
+
+      const existing = await this.employeeRepository.findByDocument(
+        document.getNumber(),
+      );
+      if (existing !== null && existing.id !== id) {
+        throw new DuplicateDocumentError(document.getNumber());
+      }
+
+      employee.document = document.getNumber();
+      employee.document_type = document.getType();
+    }
+
+    if (dto.positionId !== undefined) {
+      const jobPosition = await this.positionRepository.findById(dto.positionId);
+      if (!jobPosition) {
+        throw new NotFoundException(
+          `No se encontró un cargo con el identificador ${dto.positionId}.`,
+        );
+      }
+      if (!jobPosition.is_active) {
+        throw new BadRequestException(
+          `El cargo con identificador ${dto.positionId} está inactivo.`,
+        );
+      }
+      // "position" se mantiene sincronizado con el nombre vigente del cargo
+      employee.position = jobPosition.name;
+      employee.jobPosition = jobPosition;
+    }
+
+    if (dto.firstName !== undefined) employee.firstName = dto.firstName;
+    if (dto.lastName !== undefined) employee.lastName = dto.lastName;
+    if (dto.phone !== undefined) employee.phone = dto.phone;
+    if (dto.salaryBase !== undefined) {
+      // Misma regla que al registrar: el salario debe ser mayor que cero
+      employee.salary_base = Salary.create(dto.salaryBase).getvalue();
+    }
+
+    try {
+      const employeeActualizado = await this.employeeRepository.save(employee);
+
+      this.auditPort.log({
+        action: 'EMPLOYEE_UPDATED',
+        module: 'Empleados',
+        resource: 'Employee',
+        resourceId: employeeActualizado.id,
+        result: 'SUCCESS',
+        message: `Se actualizó el empleado "${employeeActualizado.firstName} ${employeeActualizado.lastName}".`,
+        metadata: { performedBy: actor.id },
+      });
+
+      return EmployeeResponseDto.fromEntity(employeeActualizado);
+    } catch (error) {
+      this.auditPort.log({
+        action: 'EMPLOYEE_UPDATE_FAILED',
+        module: 'Empleados',
+        resource: 'Employee',
+        resourceId: id,
+        result: 'FAILED',
+        message: 'Falló la actualización de un empleado.',
+        metadata: {
+          performedBy: actor.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+
+      throw error;
+    }
   }
 }

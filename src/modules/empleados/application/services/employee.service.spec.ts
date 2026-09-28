@@ -28,9 +28,11 @@ describe('EmployeeService', () => {
   const employeeRepositoryMock: {
     save: jest.Mock;
     findByDocument: jest.Mock;
+    findById: jest.Mock;
   } = {
     save: jest.fn(),
     findByDocument: jest.fn(),
+    findById: jest.fn(),
   };
 
   const branchRepositoryMock: {
@@ -299,6 +301,154 @@ describe('EmployeeService', () => {
       expect(auditPortMock.log).not.toHaveBeenCalled();
     });
   });
+
+  // =========================================================
+  // update
+  // =========================================================
+
+  describe('update', () => {
+    beforeEach(() => {
+      employeeRepositoryMock.findById.mockResolvedValue(crearEmpleado());
+      employeeRepositoryMock.findByDocument.mockResolvedValue(null);
+      positionRepositoryMock.findById.mockResolvedValue(crearCargo());
+      employeeRepositoryMock.save.mockImplementation((empleado: Employee) =>
+        Promise.resolve(empleado),
+      );
+    });
+
+    it('debe actualizar el documento cuando no está en uso', async () => {
+      const resultado = await service.update(
+        5,
+        { documentType: DocumentType.CC, documentNumber: '9998887777' },
+        actor,
+      );
+
+      expect(resultado.document).toBe('9998887777');
+      expect(employeeRepositoryMock.findByDocument).toHaveBeenCalledWith(
+        '9998887777',
+      );
+    });
+
+    it('no debe lanzar error si el documento nuevo es el mismo que ya tenía', async () => {
+      employeeRepositoryMock.findByDocument.mockResolvedValue(
+        crearEmpleado({ id: 5 }),
+      );
+
+      await expect(
+        service.update(
+          5,
+          { documentType: DocumentType.CC, documentNumber: '1020304050' },
+          actor,
+        ),
+      ).resolves.toBeDefined();
+    });
+
+    it('debe lanzar DuplicateDocumentError cuando el documento pertenece a otro empleado', async () => {
+      employeeRepositoryMock.findByDocument.mockResolvedValue(
+        crearEmpleado({ id: 99 }),
+      );
+
+      await expect(
+        service.update(
+          5,
+          { documentType: DocumentType.CC, documentNumber: '1112223333' },
+          actor,
+        ),
+      ).rejects.toThrow(DuplicateDocumentError);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe actualizar los campos recibidos', async () => {
+      const resultado = await service.update(
+        5,
+        { firstName: 'Julián', phone: '3009998888' },
+        actor,
+      );
+
+      expect(resultado.firstName).toBe('Julián');
+      expect(resultado.phone).toBe('3009998888');
+      expect(employeeRepositoryMock.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('debe validar el salario con la misma regla que al registrar', async () => {
+      await expect(
+        service.update(5, { salaryBase: 0 }, actor),
+      ).rejects.toThrow(InvalidSalaryError);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe cambiar el cargo y sincronizar el texto histórico', async () => {
+      const cargo = crearCargo({ id: 2, name: 'Mesero' });
+      positionRepositoryMock.findById.mockResolvedValue(cargo);
+
+      const resultado = await service.update(5, { positionId: 2 }, actor);
+
+      expect(resultado.position).toBe('Mesero');
+      expect(positionRepositoryMock.findById).toHaveBeenCalledWith(2);
+    });
+
+    it('debe lanzar NotFoundException cuando el empleado no existe', async () => {
+      employeeRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(99, { firstName: 'Julián' }, actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar NotFoundException cuando el nuevo cargo no existe', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(5, { positionId: 99 }, actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando el nuevo cargo está inactivo', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(
+        crearCargo({ is_active: false }),
+      );
+
+      await expect(
+        service.update(5, { positionId: 3 }, actor),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe auditar la actualización exitosa', async () => {
+      await service.update(5, { firstName: 'Julián' }, actor);
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_UPDATED',
+          resourceId: 5,
+          result: 'SUCCESS',
+          metadata: { performedBy: actor.id },
+        }),
+      );
+    });
+
+    it('debe auditar el fallo cuando no se puede guardar', async () => {
+      employeeRepositoryMock.save.mockRejectedValue(new Error('Error de BD'));
+
+      await expect(
+        service.update(5, { firstName: 'Julián' }, actor),
+      ).rejects.toThrow('Error de BD');
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_UPDATE_FAILED',
+          result: 'FAILED',
+        }),
+      );
+    });
+  });
 });
 
 // =========================================================
@@ -335,6 +485,22 @@ function crearCargo(overrides: Partial<Position> = {}): Position {
     id: 1,
     name: 'Auxiliar de cocina',
     is_active: true,
+    ...overrides,
+  });
+}
+
+function crearEmpleado(overrides: Partial<Employee> = {}): Employee {
+  return Object.assign(new Employee(), {
+    id: 5,
+    firstName: 'Juan',
+    lastName: 'Pérez',
+    document: '1020304050',
+    document_type: DocumentType.CC,
+    phone: '3001234567',
+    salary_base: 1800000,
+    position: 'Auxiliar de cocina',
+    status: 'ACTIVO',
+    employee_branch_assig: [],
     ...overrides,
   });
 }

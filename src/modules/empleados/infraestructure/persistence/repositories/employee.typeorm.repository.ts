@@ -21,6 +21,16 @@ export class EmployeeTypeOrmRepository implements EmployeeRepositoryPort {
         return this.repository.findOne({where: {document} });
     }
 
+    async findById(id: number): Promise<Employee | null> {
+        return this.repository.findOne({
+            where: { id },
+            relations: {
+                jobPosition: true,
+                employee_branch_assig: { branch: true },
+            },
+        });
+    }
+
     async findAll(filters: EmployeeListFilters): Promise<Employee[]> {
         const queryBuilder = this.repository
             .createQueryBuilder('employee')
