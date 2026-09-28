@@ -39,7 +39,7 @@ export class Employee {
 
   /**
    * Nombre del cargo al momento del registro. Se conserva como texto para no
-   * alterar la información histórica cuando el cargo del catálogo cambia (HU41 CA07).
+   * alterar la información histórica cuando el cargo del catálogo cambia.
    */
   @Column('varchar', { length: 40, nullable: false })
   position!: string;

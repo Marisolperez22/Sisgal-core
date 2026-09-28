@@ -1,4 +1,4 @@
-import { BadRequestException, Body, ConflictException, Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
@@ -6,12 +6,14 @@ import {
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
 import { EmployeeService } from 'src/modules/empleados/application/services/employee.service';
 import { RegisterEmployeeDto } from '../dtos/register-employee.dto';
+import { ListEmployeesQueryDto } from '../dtos/list-employees-query.dto';
 import { EmployeeResponseDto } from '../dtos/employee-response.dto';
 import { DuplicateDocumentError, EmptyDocumentNumberError, InvalidDocumentFormatError, InvalidSalaryError } from 'src/modules/empleados/domain/errors/employee.errors';
 import { Roles } from '../../../../../infraestructure/auth/decorators/roles.decorator';
@@ -78,5 +80,24 @@ export class EmployeeController {
             throw error
 
         }
+    }
+
+    @Get()
+    @ApiOperation({
+        summary: 'Listar empleados',
+        description:
+            'Lista los empleados registrados, con búsqueda y filtros opcionales por sucursal y cargo.',
+    })
+    @ApiOkResponse({
+        description: 'Empleados obtenidos correctamente.',
+        type: EmployeeResponseDto,
+        isArray: true,
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Se produjo un error interno al consultar los empleados.',
+        type: ErrorResponseDto,
+    })
+    async findAll(@Query() query: ListEmployeesQueryDto): Promise<EmployeeResponseDto[]> {
+        return this.employeeService.findAll(query);
     }
 }

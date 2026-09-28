@@ -23,7 +23,7 @@ import { WinstonAuditAdapter } from '../../infraestructure/logging/winston/winst
             provide: EMPLOYEE_REPOSITORY_PORT,
             useClass: EmployeeTypeOrmRepository,
         },
-        // Port propio hacia job_position (catálogo de cargos de HU41)
+        // Port propio hacia job_position (catálogo de cargos)
         {
             provide: POSITION_REPOSITORY_PORT,
             useClass: PositionTypeOrmRepository,

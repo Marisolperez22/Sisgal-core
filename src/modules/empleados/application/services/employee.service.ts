@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import * as employeeRepositoryPort from '../../domain/ports/employee-repository.port';
 import { RegisterEmployeeDto } from '../../infraestructure/http/dtos/register-employee.dto';
+import { ListEmployeesQueryDto } from '../../infraestructure/http/dtos/list-employees-query.dto';
+import { EmployeeResponseDto } from '../../infraestructure/http/dtos/employee-response.dto';
 import { Employee } from 'src/entities/employee.model';
 import { DocumentId } from '../../domain/value-objects/document-id.vo';
 import { Salary } from '../../domain/value-objects/salary.vo';
@@ -65,7 +67,7 @@ export class EmployeeService {
       );
     }
 
-    // El cargo es obligatorio: debe existir y estar activo (catálogo de HU41)
+    // El cargo es obligatorio: debe existir y estar activo
     const jobPosition = await this.positionRepository.findById(
       dto.positionId,
     );
@@ -137,5 +139,11 @@ export class EmployeeService {
 
       throw error;
     }
+  }
+
+  // Búsqueda y filtros son opcionales y se combinan con AND
+  async findAll(query: ListEmployeesQueryDto): Promise<EmployeeResponseDto[]> {
+    const employees = await this.employeeRepository.findAll(query);
+    return employees.map((employee) => EmployeeResponseDto.fromEntity(employee));
   }
 }

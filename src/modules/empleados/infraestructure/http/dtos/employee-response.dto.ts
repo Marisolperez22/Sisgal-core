@@ -70,6 +70,20 @@ export class EmployeeResponseDto {
   })
   positionId!: number | null;
 
+  @ApiProperty({
+    description: 'Nombre de la sucursal vigente del empleado',
+    example: 'Sucursal Centro',
+    nullable: true,
+  })
+  branchName!: string | null;
+
+  @ApiProperty({
+    description: 'Nombre del cargo asignado del catálogo de cargos',
+    example: 'Mesero',
+    nullable: true,
+  })
+  positionName!: string | null;
+
   static fromEntity(employee: Employee): EmployeeResponseDto {
     const dto = new EmployeeResponseDto();
     dto.id = employee.id;
@@ -83,7 +97,9 @@ export class EmployeeResponseDto {
     dto.status = employee.status;
     const current = employee.employee_branch_assig?.find((a) => a.is_current);
     dto.branchId = current ? current.branch.id : null;
+    dto.branchName = current ? current.branch.name : null;
     dto.positionId = employee.jobPosition ? employee.jobPosition.id : null;
+    dto.positionName = employee.jobPosition ? employee.jobPosition.name : null;
     return dto;
   }
 }
