@@ -49,4 +49,14 @@ export class UpdateEmployeeDto {
   @IsInt()
   @Min(1)
   positionId?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Identificador de la nueva sucursal activa. Cierra la asignación vigente y abre una nueva.',
+    example: 1,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  branchId?: number;
 }
