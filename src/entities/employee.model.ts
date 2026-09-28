@@ -39,7 +39,7 @@ export class Employee {
 
   /**
    * Nombre del cargo al momento del registro. Se conserva como texto para no
-   * alterar la información histórica cuando el cargo del catálogo cambia (HU41 CA07).
+   * alterar la información histórica cuando el cargo del catálogo cambia.
    */
   @Column('varchar', { length: 40, nullable: false })
   position!: string;
@@ -57,11 +57,13 @@ export class Employee {
   @JoinColumn({ name: 'workday_config_id' })
   workdayConfig!: WorkdayConfig;
 
-  // Historial de sedes del empleado; cascade insert crea la asignación junto con el empleado
+  // Historial de sedes del empleado; cascade insert crea la asignación junto con el
+  // empleado, y cascade update permite cerrar (is_current/end_date) la asignación
+  // vigente al reasignar de sucursal sin tener que guardarla aparte.
   @OneToMany(
     () => EmployeeBranchAssignment,
     (employee_branch_assig) => employee_branch_assig.employee,
-    { cascade: ['insert'] },
+    { cascade: ['insert', 'update'] },
   )
   employee_branch_assig!: EmployeeBranchAssignment[];
 

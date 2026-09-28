@@ -1,4 +1,8 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { EmployeeService } from './employee.service';
@@ -21,6 +25,7 @@ import { Role } from 'src/application/ports/auth/auth-user';
 import type { AuthUser } from 'src/application/ports/auth/auth-user';
 
 import { Branch, Employee, Position } from 'src/entities';
+import { EmployeeBranchAssignment } from 'src/entities/employee-branch-assignment.model';
 
 describe('EmployeeService', () => {
   let service: EmployeeService;
@@ -28,9 +33,15 @@ describe('EmployeeService', () => {
   const employeeRepositoryMock: {
     save: jest.Mock;
     findByDocument: jest.Mock;
+    findById: jest.Mock;
+    deactivate: jest.Mock;
+    hasHistoricalRecords: jest.Mock;
   } = {
     save: jest.fn(),
     findByDocument: jest.fn(),
+    findById: jest.fn(),
+    deactivate: jest.fn(),
+    hasHistoricalRecords: jest.fn(),
   };
 
   const branchRepositoryMock: {
@@ -299,6 +310,341 @@ describe('EmployeeService', () => {
       expect(auditPortMock.log).not.toHaveBeenCalled();
     });
   });
+
+  // =========================================================
+  // update
+  // =========================================================
+
+  describe('update', () => {
+    beforeEach(() => {
+      employeeRepositoryMock.findById.mockResolvedValue(crearEmpleado());
+      employeeRepositoryMock.findByDocument.mockResolvedValue(null);
+      positionRepositoryMock.findById.mockResolvedValue(crearCargo());
+      employeeRepositoryMock.save.mockImplementation((empleado: Employee) =>
+        Promise.resolve(empleado),
+      );
+    });
+
+    it('debe actualizar el documento cuando no está en uso', async () => {
+      const resultado = await service.update(
+        5,
+        { documentType: DocumentType.CC, documentNumber: '9998887777' },
+        actor,
+      );
+
+      expect(resultado.document).toBe('9998887777');
+      expect(employeeRepositoryMock.findByDocument).toHaveBeenCalledWith(
+        '9998887777',
+      );
+    });
+
+    it('no debe lanzar error si el documento nuevo es el mismo que ya tenía', async () => {
+      employeeRepositoryMock.findByDocument.mockResolvedValue(
+        crearEmpleado({ id: 5 }),
+      );
+
+      await expect(
+        service.update(
+          5,
+          { documentType: DocumentType.CC, documentNumber: '1020304050' },
+          actor,
+        ),
+      ).resolves.toBeDefined();
+    });
+
+    it('debe lanzar DuplicateDocumentError cuando el documento pertenece a otro empleado', async () => {
+      employeeRepositoryMock.findByDocument.mockResolvedValue(
+        crearEmpleado({ id: 99 }),
+      );
+
+      await expect(
+        service.update(
+          5,
+          { documentType: DocumentType.CC, documentNumber: '1112223333' },
+          actor,
+        ),
+      ).rejects.toThrow(DuplicateDocumentError);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe actualizar los campos recibidos', async () => {
+      const resultado = await service.update(
+        5,
+        { firstName: 'Julián', phone: '3009998888' },
+        actor,
+      );
+
+      expect(resultado.firstName).toBe('Julián');
+      expect(resultado.phone).toBe('3009998888');
+      expect(employeeRepositoryMock.save).toHaveBeenCalledTimes(1);
+    });
+
+    it('debe validar el salario con la misma regla que al registrar', async () => {
+      await expect(
+        service.update(5, { salaryBase: 0 }, actor),
+      ).rejects.toThrow(InvalidSalaryError);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe cambiar el cargo y sincronizar el texto histórico', async () => {
+      const cargo = crearCargo({ id: 2, name: 'Mesero' });
+      positionRepositoryMock.findById.mockResolvedValue(cargo);
+
+      const resultado = await service.update(5, { positionId: 2 }, actor);
+
+      expect(resultado.position).toBe('Mesero');
+      expect(positionRepositoryMock.findById).toHaveBeenCalledWith(2);
+    });
+
+    it('debe lanzar NotFoundException cuando el empleado no existe', async () => {
+      employeeRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(99, { firstName: 'Julián' }, actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar NotFoundException cuando el nuevo cargo no existe', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(5, { positionId: 99 }, actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando el nuevo cargo está inactivo', async () => {
+      positionRepositoryMock.findById.mockResolvedValue(
+        crearCargo({ is_active: false }),
+      );
+
+      await expect(
+        service.update(5, { positionId: 3 }, actor),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe auditar la actualización exitosa', async () => {
+      await service.update(5, { firstName: 'Julián' }, actor);
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_UPDATED',
+          resourceId: 5,
+          result: 'SUCCESS',
+          metadata: { performedBy: actor.id },
+        }),
+      );
+    });
+
+    it('debe auditar el fallo cuando no se puede guardar', async () => {
+      employeeRepositoryMock.save.mockRejectedValue(new Error('Error de BD'));
+
+      await expect(
+        service.update(5, { firstName: 'Julián' }, actor),
+      ).rejects.toThrow('Error de BD');
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_UPDATE_FAILED',
+          result: 'FAILED',
+        }),
+      );
+    });
+
+    // =========================================================
+    // Reasignación de sucursal
+    // =========================================================
+
+    it('debe cerrar la asignación vigente y crear una nueva al cambiar de sucursal', async () => {
+      const sucursalActual = crearSucursal({ id: 1, name: 'Sucursal Centro' });
+      const sucursalNueva = crearSucursal({ id: 2, name: 'Sucursal Norte' });
+
+      const asignacionVigente = Object.assign(new EmployeeBranchAssignment(), {
+        branch: sucursalActual,
+        is_current: true,
+        end_date: null,
+      });
+
+      employeeRepositoryMock.findById.mockResolvedValue(
+        crearEmpleado({ employee_branch_assig: [asignacionVigente] }),
+      );
+      branchRepositoryMock.findById.mockResolvedValue(sucursalNueva);
+
+      const resultado = await service.update(5, { branchId: 2 }, actor);
+
+      expect(branchRepositoryMock.findById).toHaveBeenCalledWith(2);
+      expect(asignacionVigente.is_current).toBe(false);
+      expect(asignacionVigente.end_date).toBeInstanceOf(Date);
+      expect(resultado.branchId).toBe(2);
+      expect(resultado.branchName).toBe('Sucursal Norte');
+
+      const nuevaAsignacion = employeeRepositoryMock.save.mock.calls[0][0]
+        .employee_branch_assig[1];
+      expect(nuevaAsignacion.is_current).toBe(true);
+      expect(nuevaAsignacion.end_date).toBeNull();
+    });
+
+    it('no debe reasignar sucursal cuando ya está en la sucursal enviada', async () => {
+      const sucursalActual = crearSucursal({ id: 1 });
+      const asignacionVigente = Object.assign(new EmployeeBranchAssignment(), {
+        branch: sucursalActual,
+        is_current: true,
+        end_date: null,
+      });
+
+      employeeRepositoryMock.findById.mockResolvedValue(
+        crearEmpleado({ employee_branch_assig: [asignacionVigente] }),
+      );
+
+      await service.update(5, { branchId: 1 }, actor);
+
+      expect(branchRepositoryMock.findById).not.toHaveBeenCalled();
+      expect(asignacionVigente.is_current).toBe(true);
+    });
+
+    it('debe lanzar NotFoundException cuando la nueva sucursal no existe', async () => {
+      const asignacionVigente = Object.assign(new EmployeeBranchAssignment(), {
+        branch: crearSucursal({ id: 1 }),
+        is_current: true,
+        end_date: null,
+      });
+
+      employeeRepositoryMock.findById.mockResolvedValue(
+        crearEmpleado({ employee_branch_assig: [asignacionVigente] }),
+      );
+      branchRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(
+        service.update(5, { branchId: 99 }, actor),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar BadRequestException cuando la nueva sucursal está inactiva', async () => {
+      const asignacionVigente = Object.assign(new EmployeeBranchAssignment(), {
+        branch: crearSucursal({ id: 1 }),
+        is_current: true,
+        end_date: null,
+      });
+
+      employeeRepositoryMock.findById.mockResolvedValue(
+        crearEmpleado({ employee_branch_assig: [asignacionVigente] }),
+      );
+      branchRepositoryMock.findById.mockResolvedValue(
+        crearSucursal({ id: 2, is_active: false }),
+      );
+
+      await expect(
+        service.update(5, { branchId: 2 }, actor),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(employeeRepositoryMock.save).not.toHaveBeenCalled();
+    });
+  });
+
+  // =========================================================
+  // deactivate
+  // =========================================================
+
+  describe('deactivate', () => {
+    beforeEach(() => {
+      employeeRepositoryMock.findById.mockResolvedValue(crearEmpleado());
+      employeeRepositoryMock.hasHistoricalRecords.mockResolvedValue(false);
+      employeeRepositoryMock.deactivate.mockResolvedValue(undefined);
+    });
+
+    it('debe desactivar el empleado cuando está activo y sin registros históricos', async () => {
+      await service.deactivate(5, actor);
+
+      expect(employeeRepositoryMock.deactivate).toHaveBeenCalledWith(5);
+    });
+
+    it('debe lanzar NotFoundException cuando el empleado no existe', async () => {
+      employeeRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(service.deactivate(99, actor)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(employeeRepositoryMock.deactivate).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar ConflictException cuando el empleado ya está inactivo', async () => {
+      employeeRepositoryMock.findById.mockResolvedValue(
+        crearEmpleado({ status: 'INACTIVO' }),
+      );
+
+      await expect(service.deactivate(5, actor)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(employeeRepositoryMock.deactivate).not.toHaveBeenCalled();
+    });
+
+    it('debe lanzar ConflictException cuando tiene registros históricos', async () => {
+      employeeRepositoryMock.hasHistoricalRecords.mockResolvedValue(true);
+
+      await expect(service.deactivate(5, actor)).rejects.toThrow(
+        ConflictException,
+      );
+
+      expect(employeeRepositoryMock.deactivate).not.toHaveBeenCalled();
+    });
+
+    it('debe auditar la desactivación exitosa indicando quién la realizó', async () => {
+      await service.deactivate(5, actor);
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_DEACTIVATED',
+          module: 'Empleados',
+          resource: 'Employee',
+          resourceId: 5,
+          result: 'SUCCESS',
+          metadata: { performedBy: actor.id },
+        }),
+      );
+    });
+
+    it('debe auditar el fallo cuando no se puede desactivar', async () => {
+      employeeRepositoryMock.deactivate.mockRejectedValue(
+        new Error('Error de BD'),
+      );
+
+      await expect(service.deactivate(5, actor)).rejects.toThrow(
+        'Error de BD',
+      );
+
+      expect(auditPortMock.log).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'EMPLOYEE_DEACTIVATE_FAILED',
+          result: 'FAILED',
+          metadata: expect.objectContaining({
+            performedBy: actor.id,
+            error: 'Error de BD',
+          }),
+        }),
+      );
+    });
+
+    it('no debe auditar cuando la validación falla antes de desactivar', async () => {
+      employeeRepositoryMock.findById.mockResolvedValue(null);
+
+      await expect(service.deactivate(99, actor)).rejects.toThrow(
+        NotFoundException,
+      );
+
+      expect(auditPortMock.log).not.toHaveBeenCalled();
+    });
+  });
 });
 
 // =========================================================
@@ -335,6 +681,22 @@ function crearCargo(overrides: Partial<Position> = {}): Position {
     id: 1,
     name: 'Auxiliar de cocina',
     is_active: true,
+    ...overrides,
+  });
+}
+
+function crearEmpleado(overrides: Partial<Employee> = {}): Employee {
+  return Object.assign(new Employee(), {
+    id: 5,
+    firstName: 'Juan',
+    lastName: 'Pérez',
+    document: '1020304050',
+    document_type: DocumentType.CC,
+    phone: '3001234567',
+    salary_base: 1800000,
+    position: 'Auxiliar de cocina',
+    status: 'ACTIVO',
+    employee_branch_assig: [],
     ...overrides,
   });
 }
