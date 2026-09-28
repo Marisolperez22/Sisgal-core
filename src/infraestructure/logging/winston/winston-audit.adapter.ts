@@ -16,7 +16,6 @@ export class WinstonAuditAdapter implements AuditPort {
         format.json(),
       ),
       transports: [
-        new transports.Console(),
         new transports.File({
           filename: 'logs/audit.log',
         }),

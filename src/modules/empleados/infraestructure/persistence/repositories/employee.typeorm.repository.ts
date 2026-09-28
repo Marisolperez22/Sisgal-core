@@ -2,6 +2,9 @@ import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from 'typeorm';
 import { Employee } from "src/entities/employee.model";
+import { AttendanceRecord } from "src/entities/attendance-record.model";
+import { PayrollPeriod } from "src/entities/payroll-period.model";
+import { DisabilityLeave } from "src/entities/disability_leave.model";
 import { EmployeeRepositoryPort, EmployeeListFilters } from "src/modules/empleados/domain/ports/employee-repository.port";
 
 @Injectable()
@@ -9,6 +12,15 @@ export class EmployeeTypeOrmRepository implements EmployeeRepositoryPort {
     constructor(
         @InjectRepository(Employee)
         private readonly repository: Repository<Employee>,
+
+        @InjectRepository(AttendanceRecord)
+        private readonly attendanceRecordRepository: Repository<AttendanceRecord>,
+
+        @InjectRepository(PayrollPeriod)
+        private readonly payrollPeriodRepository: Repository<PayrollPeriod>,
+
+        @InjectRepository(DisabilityLeave)
+        private readonly disabilityLeaveRepository: Repository<DisabilityLeave>,
     ) {}
 
 
@@ -55,7 +67,26 @@ export class EmployeeTypeOrmRepository implements EmployeeRepositoryPort {
         if (filters.positionId) {
             queryBuilder.andWhere('jobPosition.id = :positionId', { positionId: filters.positionId });
         }
+        if (filters.status) {
+            queryBuilder.andWhere('employee.status = :status', { status: filters.status });
+        }
 
         return queryBuilder.getMany();
+    }
+
+    async deactivate(id: number): Promise<void> {
+        await this.repository.update({ id }, { status: 'INACTIVO' });
+    }
+
+    // Verifica si el empleado tiene registros de asistencia, nómina o
+    // incapacidades asociados; si tiene alguno, no se le permite desactivar.
+    async hasHistoricalRecords(id: number): Promise<boolean> {
+        const [asistencias, nominas, incapacidades] = await Promise.all([
+            this.attendanceRecordRepository.count({ where: { employee: { id } } }),
+            this.payrollPeriodRepository.count({ where: { employee: { id } } }),
+            this.disabilityLeaveRepository.count({ where: { employee: { id } } }),
+        ]);
+
+        return asistencias > 0 || nominas > 0 || incapacidades > 0;
     }
 }

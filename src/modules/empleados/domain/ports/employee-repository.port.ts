@@ -7,6 +7,7 @@ export type EmployeeListFilters = {
   search?: string;
   branchId?: number;
   positionId?: number;
+  status?: 'ACTIVO' | 'INACTIVO';
 };
 
 export interface EmployeeRepositoryPort {
@@ -14,4 +15,6 @@ export interface EmployeeRepositoryPort {
   findByDocument(document: string): Promise<Employee | null>;
   findAll(filters: EmployeeListFilters): Promise<Employee[]>;
   findById(id: number): Promise<Employee | null>;
+  deactivate(id: number): Promise<void>;
+  hasHistoricalRecords(id: number): Promise<boolean>;
 }

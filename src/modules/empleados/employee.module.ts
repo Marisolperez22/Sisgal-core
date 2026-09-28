@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Employee } from 'src/entities/employee.model';
 import { Position } from 'src/entities/position.model';
+import { AttendanceRecord } from 'src/entities/attendance-record.model';
+import { PayrollPeriod } from 'src/entities/payroll-period.model';
+import { DisabilityLeave } from 'src/entities/disability_leave.model';
 import { EmployeeController } from './infraestructure/http/controllers/employee.controller';
 import { EmployeeService } from './application/services/employee.service';
 import { EMPLOYEE_REPOSITORY_PORT } from './domain/ports/employee-repository.port';
@@ -15,7 +18,7 @@ import { WinstonAuditAdapter } from '../../infraestructure/logging/winston/winst
 
 @Module({
     // AuthModule aporta los guards; SucursalesModule exporta el port para consultar sucursales
-    imports: [AuthModule, SucursalesModule,TypeOrmModule.forFeature([Employee, Position])],
+    imports: [AuthModule, SucursalesModule,TypeOrmModule.forFeature([Employee, Position, AttendanceRecord, PayrollPeriod, DisabilityLeave])],
     controllers: [EmployeeController],
     providers: [
         EmployeeService,

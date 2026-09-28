@@ -1,13 +1,15 @@
-import { BadRequestException, Body, ConflictException, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, ConflictException, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { ErrorResponseDto } from 'src/shared/infraestructure/http/dtos';
@@ -106,18 +108,18 @@ export class EmployeeController {
     @ApiOperation({
         summary: 'Editar información de empleado',
         description:
-            'Actualiza los datos de un empleado. La sucursal no se edita por este medio.',
+            'Actualiza los datos de un empleado. Si se envía branchId, cierra la asignación de sucursal vigente y abre una nueva, conservando el historial.',
     })
     @ApiOkResponse({
         description: 'Empleado actualizado correctamente.',
         type: EmployeeResponseDto,
     })
     @ApiBadRequestResponse({
-        description: 'Datos inválidos (salario, formato de documento) o cargo inactivo.',
+        description: 'Datos inválidos (salario, formato de documento) o cargo/sucursal inactivos.',
         type: ErrorResponseDto,
     })
     @ApiNotFoundResponse({
-        description: 'No se encontró el empleado o el cargo indicado.',
+        description: 'No se encontró el empleado, el cargo o la sucursal indicados.',
         type: ErrorResponseDto,
     })
     @ApiConflictResponse({
@@ -147,5 +149,40 @@ export class EmployeeController {
 
             throw error;
         }
+    }
+
+    @Delete(':id')
+    @ApiOperation({
+        summary: 'Desactivar empleado',
+        description:
+            'Desactiva un empleado de forma lógica. El registro no se elimina físicamente de la base de datos, únicamente cambia su estado a inactivo.',
+    })
+    @ApiParam({
+        name: 'id',
+        type: Number,
+        description: 'Identificador único del empleado que se desea desactivar.',
+        example: 1,
+    })
+    @ApiNoContentResponse({
+        description: 'Empleado desactivado correctamente.',
+    })
+    @ApiNotFoundResponse({
+        description: 'No se encontró un empleado con el identificador proporcionado.',
+        type: ErrorResponseDto,
+    })
+    @ApiConflictResponse({
+        description:
+            'No se puede desactivar el empleado porque ya está inactivo o tiene registros de asistencia, nómina o incapacidades asociados.',
+        type: ErrorResponseDto,
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Se produjo un error interno al desactivar el empleado.',
+        type: ErrorResponseDto,
+    })
+    async deactivate(
+        @Param('id', ParseIntPipe) id: number,
+        @Req() request: Request & { user: AuthUser },
+    ): Promise<void> {
+        return this.employeeService.deactivate(id, request.user);
     }
 }
