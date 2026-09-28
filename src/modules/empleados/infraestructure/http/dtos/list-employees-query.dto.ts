@@ -1,5 +1,5 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ListEmployeesQueryDto {
@@ -28,4 +28,13 @@ export class ListEmployeesQueryDto {
   @Type(() => Number)
   @IsInt()
   positionId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtra por el estado del empleado',
+    example: 'ACTIVO',
+    enum: ['ACTIVO', 'INACTIVO'],
+  })
+  @IsOptional()
+  @IsIn(['ACTIVO', 'INACTIVO'])
+  status?: 'ACTIVO' | 'INACTIVO';
 }
