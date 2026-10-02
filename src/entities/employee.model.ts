@@ -13,6 +13,7 @@ import { DisabilityLeave } from './disability_leave.model';
 import { AttendanceRecord } from './attendance-record.model';
 import { AttendanceLog } from './attendance-log.model';
 import { WorkdayConfig } from './workday-config.model';
+import { EmployeeLoan } from './employee_loan.model';
 
 @Entity()
 export class Employee {
@@ -84,4 +85,7 @@ export class Employee {
 
   @OneToMany(() => AttendanceLog, (attendanceLog) => attendanceLog.employee)
   attendanceLogs!: AttendanceLog[];
+
+  @OneToMany(() => EmployeeLoan, (loan) => loan.employee)
+  loans?: EmployeeLoan[];
 }
