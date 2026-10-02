@@ -18,6 +18,7 @@ import { WorkdayConfig } from '../entities/workday-config.model';
 import { Position } from '../entities/position.model';
 import { CreateCoreEntities1789782222297 } from '../migrations/1789782222297-CreateCoreEntities';
 import { CreatePositionCatalog1790380800000 } from '../migrations/1790380800000-CreatePositionCatalog';
+import { EmployeeLoan } from 'src/entities';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -40,6 +41,7 @@ export const dataSourceOptions: DataSourceOptions = {
     WorkRateConfig,
     WorkdayConfig,
     Position,
+    EmployeeLoan
   ],
   ssl: { rejectUnauthorized: false },
   migrations: [
