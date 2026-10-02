@@ -6,6 +6,7 @@ import { LoanService } from './loan.service';
 describe('LoanService', () => {
   const loanRepository: jest.Mocked<LoanRepositoryPort> = {
     findAll: jest.fn(),
+    getIndicators: jest.fn(),
   };
   let service: LoanService;
 
@@ -62,5 +63,18 @@ describe('LoanService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(loanRepository.findAll).not.toHaveBeenCalled();
+  });
+
+  it('retorna los indicadores consolidados de préstamos activos', async () => {
+    loanRepository.getIndicators.mockResolvedValue({
+      cantidadPrestamosActivos: 3,
+      montoTotalPrestamosActivos: 4500000,
+    });
+
+    await expect(service.obtenerIndicadores()).resolves.toEqual({
+      cantidadPrestamosActivos: 3,
+      montoTotalPrestamosActivos: 4500000,
+    });
+    expect(loanRepository.getIndicators).toHaveBeenCalledTimes(1);
   });
 });

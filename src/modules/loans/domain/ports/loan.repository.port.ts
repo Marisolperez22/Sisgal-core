@@ -12,6 +12,12 @@ export interface LoanFilters {
   fechaHasta?: string;
 }
 
+export interface LoanIndicators {
+  cantidadPrestamosActivos: number;
+  montoTotalPrestamosActivos: number;
+}
+
 export interface LoanRepositoryPort {
   findAll(filters: LoanFilters): Promise<EmployeeLoan[]>;
+  getIndicators(): Promise<LoanIndicators>;
 }

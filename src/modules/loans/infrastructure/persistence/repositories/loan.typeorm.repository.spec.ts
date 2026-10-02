@@ -7,9 +7,13 @@ describe('LoanTypeOrmRepository', () => {
   const queryBuilder = {
     leftJoinAndSelect: jest.fn(),
     andWhere: jest.fn(),
+    select: jest.fn(),
+    addSelect: jest.fn(),
+    where: jest.fn(),
     orderBy: jest.fn(),
     addOrderBy: jest.fn(),
     getMany: jest.fn(),
+    getRawOne: jest.fn(),
   };
   const employeeLoanRepository = {
     createQueryBuilder: jest.fn(),
@@ -20,6 +24,9 @@ describe('LoanTypeOrmRepository', () => {
     jest.clearAllMocks();
     queryBuilder.leftJoinAndSelect.mockReturnValue(queryBuilder);
     queryBuilder.andWhere.mockReturnValue(queryBuilder);
+    queryBuilder.select.mockReturnValue(queryBuilder);
+    queryBuilder.addSelect.mockReturnValue(queryBuilder);
+    queryBuilder.where.mockReturnValue(queryBuilder);
     queryBuilder.orderBy.mockReturnValue(queryBuilder);
     queryBuilder.addOrderBy.mockReturnValue(queryBuilder);
     employeeLoanRepository.createQueryBuilder.mockReturnValue(queryBuilder);
@@ -67,5 +74,39 @@ describe('LoanTypeOrmRepository', () => {
     await repository.findAll({});
 
     expect(queryBuilder.andWhere).not.toHaveBeenCalled();
+  });
+
+  it('calcula en una consulta la cantidad y monto original de préstamos activos', async () => {
+    queryBuilder.getRawOne.mockResolvedValue({
+      cantidadPrestamosActivos: '2',
+      montoTotalPrestamosActivos: '3500000.50',
+    });
+
+    await expect(repository.getIndicators()).resolves.toEqual({
+      cantidadPrestamosActivos: 2,
+      montoTotalPrestamosActivos: 3500000.5,
+    });
+
+    expect(queryBuilder.select).toHaveBeenCalledWith(
+      'COUNT(loan.id)',
+      'cantidadPrestamosActivos',
+    );
+    expect(queryBuilder.addSelect).toHaveBeenCalledWith(
+      'COALESCE(SUM(loan.totalAmount), 0)',
+      'montoTotalPrestamosActivos',
+    );
+    expect(queryBuilder.where).toHaveBeenCalledWith('loan.status = :estado', {
+      estado: LoanStatus.ACTIVO,
+    });
+    expect(queryBuilder.getRawOne).toHaveBeenCalledTimes(1);
+  });
+
+  it('retorna indicadores en cero cuando la agregación no tiene resultado', async () => {
+    queryBuilder.getRawOne.mockResolvedValue(undefined);
+
+    await expect(repository.getIndicators()).resolves.toEqual({
+      cantidadPrestamosActivos: 0,
+      montoTotalPrestamosActivos: 0,
+    });
   });
 });

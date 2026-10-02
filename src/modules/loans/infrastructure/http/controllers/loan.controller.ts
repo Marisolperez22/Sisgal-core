@@ -12,6 +12,7 @@ import { Roles } from 'src/infraestructure/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
 import { LoanService } from '../../../application/services/loan.service';
+import { LoanIndicatorsResponseDto } from '../dtos/loan-indicators-response.dto';
 import { LoanQueryDto } from '../dtos/loan-query.dto';
 import { LoanResponseDto } from '../dtos/loan-response.dto';
 
@@ -22,6 +23,23 @@ import { LoanResponseDto } from '../dtos/loan-response.dto';
 @Controller('prestamos')
 export class LoanController {
   constructor(private readonly loanService: LoanService) {}
+
+  @Get('indicadores')
+  @ApiOperation({
+    summary: 'Obtener indicadores de préstamos activos',
+    description:
+      'Retorna en una consulta la cantidad y la suma del monto original de los préstamos activos.',
+  })
+  @ApiOkResponse({
+    description: 'Indicadores de préstamos activos obtenidos correctamente.',
+    type: LoanIndicatorsResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al consultar los indicadores.',
+  })
+  obtenerIndicadores(): Promise<LoanIndicatorsResponseDto> {
+    return this.loanService.obtenerIndicadores();
+  }
 
   @Get()
   @ApiOperation({

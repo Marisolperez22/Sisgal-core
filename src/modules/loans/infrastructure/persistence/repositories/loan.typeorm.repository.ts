@@ -4,8 +4,10 @@ import { Repository } from 'typeorm';
 import { EmployeeLoan } from 'src/entities';
 import {
   LoanFilters,
+  LoanIndicators,
   LoanRepositoryPort,
 } from '../../../domain/ports/loan.repository.port';
+import { LoanStatus } from '../../../enums/loan-status.enum';
 
 @Injectable()
 export class LoanTypeOrmRepository implements LoanRepositoryPort {
@@ -58,5 +60,27 @@ export class LoanTypeOrmRepository implements LoanRepositoryPort {
       .orderBy('loan.grantedAt', 'DESC')
       .addOrderBy('loan.id', 'DESC')
       .getMany();
+  }
+
+  async getIndicators(): Promise<LoanIndicators> {
+    const result = await this.repository
+      .createQueryBuilder('loan')
+      .select('COUNT(loan.id)', 'cantidadPrestamosActivos')
+      .addSelect(
+        'COALESCE(SUM(loan.totalAmount), 0)',
+        'montoTotalPrestamosActivos',
+      )
+      .where('loan.status = :estado', { estado: LoanStatus.ACTIVO })
+      .getRawOne<{
+        cantidadPrestamosActivos: string;
+        montoTotalPrestamosActivos: string;
+      }>();
+
+    return {
+      cantidadPrestamosActivos: Number(result?.cantidadPrestamosActivos ?? 0),
+      montoTotalPrestamosActivos: Number(
+        result?.montoTotalPrestamosActivos ?? 0,
+      ),
+    };
   }
 }
