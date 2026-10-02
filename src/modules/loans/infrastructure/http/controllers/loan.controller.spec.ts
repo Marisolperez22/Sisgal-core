@@ -1,0 +1,85 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
+import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
+import { LoanService } from '../../../application/services/loan.service';
+import { LoanQueryDto } from '../dtos/loan-query.dto';
+import { LoanController } from './loan.controller';
+
+describe('LoanController', () => {
+  let controller: LoanController;
+
+  const loanServiceMock = {
+    obtenerTodos: jest.fn(),
+    obtenerIndicadores: jest.fn(),
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [LoanController],
+      providers: [
+        {
+          provide: LoanService,
+          useValue: loanServiceMock,
+        },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: jest.fn().mockReturnValue(true) })
+      .compile();
+
+    controller = module.get<LoanController>(LoanController);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('debe estar definido', () => {
+    expect(controller).toBeDefined();
+  });
+
+  describe('obtenerTodos', () => {
+    it('delega los filtros al servicio y retorna los préstamos', async () => {
+      const query = {
+        empleadoId: 7,
+        nombreEmpleado: 'María Pérez',
+        documento: '123456789',
+      } as LoanQueryDto;
+      const loans = [{ id: 1 }, { id: 2 }];
+      loanServiceMock.obtenerTodos.mockResolvedValue(loans);
+
+      await expect(controller.obtenerTodos(query)).resolves.toBe(loans);
+
+      expect(loanServiceMock.obtenerTodos).toHaveBeenCalledTimes(1);
+      expect(loanServiceMock.obtenerTodos).toHaveBeenCalledWith(query);
+    });
+
+    it('retorna una lista vacía cuando el servicio no encuentra préstamos', async () => {
+      loanServiceMock.obtenerTodos.mockResolvedValue([]);
+
+      await expect(controller.obtenerTodos(new LoanQueryDto())).resolves.toEqual(
+        [],
+      );
+      expect(loanServiceMock.obtenerTodos).toHaveBeenCalledWith(
+        new LoanQueryDto(),
+      );
+    });
+  });
+
+  describe('obtenerIndicadores', () => {
+    it('delega la consulta al servicio y retorna los indicadores', async () => {
+      const indicators = {
+        cantidadPrestamosActivos: 3,
+        montoTotalPrestamosActivos: 4500000,
+      };
+      loanServiceMock.obtenerIndicadores.mockResolvedValue(indicators);
+
+      await expect(controller.obtenerIndicadores()).resolves.toBe(indicators);
+
+      expect(loanServiceMock.obtenerIndicadores).toHaveBeenCalledTimes(1);
+      expect(loanServiceMock.obtenerIndicadores).toHaveBeenCalledWith();
+    });
+  });
+});
