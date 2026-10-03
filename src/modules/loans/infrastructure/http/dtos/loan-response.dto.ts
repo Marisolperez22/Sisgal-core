@@ -12,6 +12,12 @@ export class LoanEmployeeResponseDto {
   @ApiProperty({ example: 'Pérez' })
   lastName!: string;
 
+  @ApiProperty({
+    description: 'Tipo de documento de identidad',
+    example: 'CC',
+  })
+  documentType!: string;
+
   @ApiProperty({ example: '123456789' })
   document!: string;
 }
@@ -57,6 +63,7 @@ export class LoanResponseDto {
       id: entity.employee.id,
       firstName: entity.employee.firstName,
       lastName: entity.employee.lastName,
+      documentType: entity.employee.document_type,
       document: entity.employee.document,
     };
     dto.totalAmount = Number(entity.totalAmount);

@@ -22,6 +22,7 @@ describe('LoanService', () => {
         id: 7,
         firstName: 'María',
         lastName: 'Pérez',
+        document_type: 'CC',
         document: '123456789',
       },
       totalAmount: '2500000.00',
@@ -48,7 +49,11 @@ describe('LoanService', () => {
     expect(loanRepository.findAll).toHaveBeenCalledWith(filters);
     expect(result[0]).toMatchObject({
       id: 1,
-      employee: { id: 7, document: '123456789' },
+      employee: {
+        id: 7,
+        documentType: 'CC',
+        document: '123456789',
+      },
       totalAmount: 2500000,
       status: LoanStatus.ACTIVO,
     });
