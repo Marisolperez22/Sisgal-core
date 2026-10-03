@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { EmployeeLoan } from 'src/entities';
+import { Employee, EmployeeLoan } from 'src/entities';
 import { LoanStatus } from '../../../enums/loan-status.enum';
 import { LoanTypeOrmRepository } from './loan.typeorm.repository';
 
@@ -17,6 +17,10 @@ describe('LoanTypeOrmRepository', () => {
   };
   const employeeLoanRepository = {
     createQueryBuilder: jest.fn(),
+    save: jest.fn(),
+  };
+  const employeeRepository = {
+    findOneBy: jest.fn(),
   };
   let repository: LoanTypeOrmRepository;
 
@@ -32,7 +36,21 @@ describe('LoanTypeOrmRepository', () => {
     employeeLoanRepository.createQueryBuilder.mockReturnValue(queryBuilder);
     repository = new LoanTypeOrmRepository(
       employeeLoanRepository as unknown as Repository<EmployeeLoan>,
+      employeeRepository as unknown as Repository<Employee>,
     );
+  });
+
+  it('busca el empleado por identificador y guarda el préstamo', async () => {
+    const employee = { id: 7 } as Employee;
+    const loan = { employee } as EmployeeLoan;
+    employeeRepository.findOneBy.mockResolvedValue(employee);
+    employeeLoanRepository.save.mockResolvedValue(loan);
+
+    await expect(repository.findEmployeeById(7)).resolves.toBe(employee);
+    await expect(repository.save(loan)).resolves.toBe(loan);
+
+    expect(employeeRepository.findOneBy).toHaveBeenCalledWith({ id: 7 });
+    expect(employeeLoanRepository.save).toHaveBeenCalledWith(loan);
   });
 
   it('combina todos los filtros mediante AND y carga el empleado', async () => {

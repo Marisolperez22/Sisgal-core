@@ -1,8 +1,10 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiCreatedResponse,
   ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
@@ -12,6 +14,7 @@ import { Roles } from 'src/infraestructure/auth/decorators/roles.decorator';
 import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
 import { LoanService } from '../../../application/services/loan.service';
+import { CreateLoanDto } from '../dtos/create-loan.dto';
 import { LoanIndicatorsResponseDto } from '../dtos/loan-indicators-response.dto';
 import { LoanQueryDto } from '../dtos/loan-query.dto';
 import { LoanResponseDto } from '../dtos/loan-response.dto';
@@ -23,6 +26,29 @@ import { LoanResponseDto } from '../dtos/loan-response.dto';
 @Controller('prestamos')
 export class LoanController {
   constructor(private readonly loanService: LoanService) {}
+
+  @Post()
+  @ApiOperation({
+    summary: 'Crear préstamo',
+    description:
+      'Crea un préstamo para un empleado y calcula la cuota, las cuotas pendientes y el saldo inicial.',
+  })
+  @ApiCreatedResponse({
+    description: 'Préstamo creado correctamente.',
+    type: LoanResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Los datos del préstamo proporcionados no son válidos.',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el empleado indicado.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al crear el préstamo.',
+  })
+  crear(@Body() dto: CreateLoanDto): Promise<LoanResponseDto> {
+    return this.loanService.crear(dto);
+  }
 
   @Get('indicadores')
   @ApiOperation({
