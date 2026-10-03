@@ -11,6 +11,7 @@ describe('LoanController', () => {
 
   const loanServiceMock = {
     crear: jest.fn(),
+    obtenerPorId: jest.fn(),
     obtenerTodos: jest.fn(),
     obtenerIndicadores: jest.fn(),
   };
@@ -83,6 +84,16 @@ describe('LoanController', () => {
       expect(loanServiceMock.obtenerTodos).toHaveBeenCalledWith(
         new LoanQueryDto(),
       );
+    });
+  });
+
+  describe('obtenerPorId', () => {
+    it('delega el identificador al servicio y retorna el préstamo', async () => {
+      const loan = { id: 3 };
+      loanServiceMock.obtenerPorId.mockResolvedValue(loan);
+
+      await expect(controller.obtenerPorId(3)).resolves.toBe(loan);
+      expect(loanServiceMock.obtenerPorId).toHaveBeenCalledWith(3);
     });
   });
 

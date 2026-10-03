@@ -8,6 +8,7 @@ import { LoanService } from './loan.service';
 describe('LoanService', () => {
   const loanRepository: jest.Mocked<LoanRepositoryPort> = {
     findEmployeeById: jest.fn(),
+    findById: jest.fn(),
     save: jest.fn(),
     findAll: jest.fn(),
     getIndicators: jest.fn(),
@@ -129,6 +130,51 @@ describe('LoanService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(loanRepository.findAll).not.toHaveBeenCalled();
+  });
+
+  describe('obtenerPorId', () => {
+    it('retorna el préstamo usando el mismo mapeo de la lista', async () => {
+      const loan = {
+        id: 3,
+        employee: {
+          id: 7,
+          firstName: 'María',
+          lastName: 'Pérez',
+          document_type: 'CC',
+          document: '123456789',
+        },
+        totalAmount: '1000.00',
+        installmentAmount: '250.00',
+        totalInstallments: 4,
+        pendingInstallments: 4,
+        outstandingBalance: '1000.00',
+        grantedAt: new Date('2026-03-10T00:00:00.000Z'),
+        status: LoanStatus.ACTIVO,
+        createdAt: new Date('2026-03-10T12:00:00.000Z'),
+        updatedAt: new Date('2026-03-10T12:00:00.000Z'),
+      } as any;
+      loanRepository.findById.mockResolvedValue(loan);
+
+      await expect(service.obtenerPorId(3)).resolves.toMatchObject({
+        id: 3,
+        employee: {
+          id: 7,
+          documentType: 'CC',
+          document: '123456789',
+        },
+        totalAmount: 1000,
+        installmentAmount: 250,
+      });
+      expect(loanRepository.findById).toHaveBeenCalledWith(3);
+    });
+
+    it('retorna 404 cuando no existe el préstamo', async () => {
+      loanRepository.findById.mockResolvedValue(null);
+
+      await expect(service.obtenerPorId(99)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
   });
 
   it('retorna los indicadores consolidados de préstamos activos', async () => {

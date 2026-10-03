@@ -19,6 +19,7 @@ export interface LoanIndicators {
 
 export interface LoanRepositoryPort {
   findEmployeeById(employeeId: number): Promise<Employee | null>;
+  findById(loanId: number): Promise<EmployeeLoan | null>;
   save(loan: EmployeeLoan): Promise<EmployeeLoan>;
   findAll(filters: LoanFilters): Promise<EmployeeLoan[]>;
   getIndicators(): Promise<LoanIndicators>;
