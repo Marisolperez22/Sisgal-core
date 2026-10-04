@@ -1,10 +1,14 @@
 import { DisabilityLeave } from 'src/entities/disability_leave.model';
+import type { DisabilityStatus } from '../value-objects/disability-status';
 
 export const DISABILITY_LEAVE_REPOSITORY_PORT = Symbol('DISABILITY_LEAVE_REPOSITORY_PORT');
 
-// Filtros de consulta: ambos opcionales, se combinan con AND
+// Filtros de consulta: todos opcionales, se combinan con AND
 export type DisabilityLeaveListFilters = {
   employeeId?: number;
+  employeeName?: string;
+  positionId?: number;
+  status?: DisabilityStatus;
   startDate?: string;
   endDate?: string;
 };

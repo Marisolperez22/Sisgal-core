@@ -22,10 +22,26 @@ export class DisabilityLeaveTypeOrmRepository implements DisabilityLeaveReposito
         const queryBuilder = this.repository
             .createQueryBuilder('disabilityLeave')
             .leftJoinAndSelect('disabilityLeave.employee', 'employee')
+            .leftJoinAndSelect('employee.jobPosition', 'jobPosition')
             .orderBy('disabilityLeave.start_date', 'DESC');
 
         if (filters.employeeId) {
             queryBuilder.andWhere('employee.id = :employeeId', { employeeId: filters.employeeId });
+        }
+        if (filters.employeeName) {
+            queryBuilder.andWhere(
+                "CONCAT(employee.\"firstName\", ' ', employee.\"lastName\") ILIKE :employeeName",
+                { employeeName: `%${filters.employeeName}%` },
+            );
+        }
+        if (filters.positionId) {
+            queryBuilder.andWhere('jobPosition.id = :positionId', { positionId: filters.positionId });
+        }
+        if (filters.status === 'Activo') {
+            queryBuilder.andWhere('disabilityLeave.end_date >= CURRENT_DATE');
+        }
+        if (filters.status === 'Finalizado') {
+            queryBuilder.andWhere('disabilityLeave.end_date < CURRENT_DATE');
         }
         if (filters.startDate) {
             queryBuilder.andWhere('disabilityLeave.end_date >= :startDate', { startDate: filters.startDate });

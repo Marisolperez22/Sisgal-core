@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { DisabilityLeave } from '../../../../../entities/disability_leave.model';
+import {
+  calcularEstadoIncapacidad,
+  type DisabilityStatus,
+} from '../../../domain/value-objects/disability-status';
 
 export class DisabilityLeaveResponseDto {
   @ApiProperty({
@@ -19,6 +23,25 @@ export class DisabilityLeaveResponseDto {
     example: 'Juan Pérez',
   })
   employeeName!: string;
+
+  @ApiProperty({
+    description: 'Tipo de documento de identidad del empleado',
+    example: 'CC',
+  })
+  documentType!: string;
+
+  @ApiProperty({
+    description: 'Número de documento del empleado',
+    example: '1020304050',
+  })
+  document!: string;
+
+  @ApiProperty({
+    description: 'Cargo actual del empleado',
+    example: 'Mesero',
+    nullable: true,
+  })
+  position!: string | null;
 
   @ApiProperty({
     description: 'Tipo de incapacidad o licencia',
@@ -51,16 +74,29 @@ export class DisabilityLeaveResponseDto {
   })
   totalDays!: number;
 
+  @ApiProperty({
+    description: 'Estado de la incapacidad, calculado a partir de la fecha de finalización',
+    enum: ['Activo', 'Finalizado'],
+    example: 'Activo',
+  })
+  status!: DisabilityStatus;
+
   static fromEntity(disabilityLeave: DisabilityLeave): DisabilityLeaveResponseDto {
     const dto = new DisabilityLeaveResponseDto();
     dto.id = disabilityLeave.id;
     dto.employeeId = disabilityLeave.employee.id;
     dto.employeeName = `${disabilityLeave.employee.firstName} ${disabilityLeave.employee.lastName}`;
+    dto.documentType = disabilityLeave.employee.document_type;
+    dto.document = disabilityLeave.employee.document;
+    dto.position = disabilityLeave.employee.jobPosition
+      ? disabilityLeave.employee.jobPosition.name
+      : null;
     dto.type = disabilityLeave.type;
     dto.otherTypeDescription = disabilityLeave.other_type_description;
     dto.startDate = disabilityLeave.start_date;
     dto.endDate = disabilityLeave.end_date;
     dto.totalDays = disabilityLeave.total_days;
+    dto.status = calcularEstadoIncapacidad(disabilityLeave.end_date);
     return dto;
   }
 }

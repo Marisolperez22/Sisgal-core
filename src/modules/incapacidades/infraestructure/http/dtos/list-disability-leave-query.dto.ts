@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional } from 'class-validator';
+import { IsDateString, IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import type { DisabilityStatus } from '../../../domain/value-objects/disability-status';
 
 export class ListDisabilityLeaveQueryDto {
   @ApiPropertyOptional({
@@ -11,6 +12,32 @@ export class ListDisabilityLeaveQueryDto {
   @Type(() => Number)
   @IsInt()
   employeeId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtra por nombre o parte del nombre del empleado',
+    example: 'Juan',
+  })
+  @IsOptional()
+  @IsString()
+  employeeName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Filtra por el identificador del cargo del empleado',
+    example: 1,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  positionId?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filtra por el estado de la incapacidad',
+    enum: ['Activo', 'Finalizado'],
+    example: 'Activo',
+  })
+  @IsOptional()
+  @IsIn(['Activo', 'Finalizado'])
+  status?: DisabilityStatus;
 
   @ApiPropertyOptional({
     description: 'Filtra registros cuyo período incluya esta fecha o sea posterior a ella',
