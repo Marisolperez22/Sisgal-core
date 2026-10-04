@@ -11,8 +11,9 @@ export class AttendanceRecord {
   @Column('timestamp')
   check_in!: Date;
 
-  @Column('timestamp')
-  check_out!: Date;
+  // null mientras el empleado no registra la salida (registro incompleto).
+  @Column('timestamp', { nullable: true })
+  check_out!: Date | null;
 
   @Column('int')
   work_minutes!: number;

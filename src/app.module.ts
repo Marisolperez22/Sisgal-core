@@ -6,6 +6,7 @@ import { SucursalesModule } from './modules/sucursales/sucursales.module';
 import { CargosModule } from './modules/cargos/cargos.module';
 import { LoansModule } from './modules/loans/loans.module';
 import { DisabilityLeaveModule } from './modules/incapacidades/disability-leave.module';
+import { AsistenciaModule } from './modules/asistencia/asistencia.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { DisabilityLeaveModule } from './modules/incapacidades/disability-leave.
     CargosModule,
     LoansModule,
     DisabilityLeaveModule,
+    AsistenciaModule,
   ],
   controllers: [],
   providers: [],

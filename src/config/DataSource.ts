@@ -20,6 +20,7 @@ import { CreateCoreEntities1789782222297 } from '../migrations/1789782222297-Cre
 import { CreatePositionCatalog1790380800000 } from '../migrations/1790380800000-CreatePositionCatalog';
 import { AddDisabilityLeaveType1791059891289 } from '../migrations/1791059891289-AddDisabilityLeaveType';
 import { AddDisabilityLeaveOtherTypeDescription1791060844659 } from '../migrations/1791060844659-AddDisabilityLeaveOtherTypeDescription';
+import { AllowIncompleteAttendanceRecord1791119213000 } from '../migrations/1791119213000-AllowIncompleteAttendanceRecord';
 import { EmployeeLoan } from 'src/entities';
 
 export const dataSourceOptions: DataSourceOptions = {
@@ -51,6 +52,7 @@ export const dataSourceOptions: DataSourceOptions = {
     CreatePositionCatalog1790380800000,
     AddDisabilityLeaveType1791059891289,
     AddDisabilityLeaveOtherTypeDescription1791060844659,
+    AllowIncompleteAttendanceRecord1791119213000,
   ],
 };
 
