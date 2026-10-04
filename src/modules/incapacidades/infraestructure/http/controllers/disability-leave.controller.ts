@@ -67,12 +67,16 @@ export class DisabilityLeaveController {
     @ApiOperation({
         summary: 'Listar incapacidades',
         description:
-            'Lista las incapacidades y licencias registradas, con filtros opcionales por empleado y rango de fechas.',
+            'Lista las incapacidades y licencias registradas, con filtros opcionales por empleado, nombre, cargo, estado y rango de fechas.',
     })
     @ApiOkResponse({
         description: 'Incapacidades obtenidas correctamente.',
         type: DisabilityLeaveResponseDto,
         isArray: true,
+    })
+    @ApiBadRequestResponse({
+        description: 'El rango de fechas no es válido (fecha inicial posterior a la final).',
+        type: ErrorResponseDto,
     })
     @ApiInternalServerErrorResponse({
         description: 'Se produjo un error interno al consultar las incapacidades.',

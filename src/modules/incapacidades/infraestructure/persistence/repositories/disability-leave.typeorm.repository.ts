@@ -22,13 +22,34 @@ export class DisabilityLeaveTypeOrmRepository implements DisabilityLeaveReposito
         const queryBuilder = this.repository
             .createQueryBuilder('disabilityLeave')
             .leftJoinAndSelect('disabilityLeave.employee', 'employee')
+            .leftJoinAndSelect('employee.jobPosition', 'jobPosition')
             .orderBy('disabilityLeave.start_date', 'DESC');
 
         if (filters.employeeId) {
             queryBuilder.andWhere('employee.id = :employeeId', { employeeId: filters.employeeId });
         }
+        if (filters.employeeName) {
+            queryBuilder.andWhere(
+                "CONCAT(employee.\"firstName\", ' ', employee.\"lastName\") ILIKE :employeeName",
+                { employeeName: `%${filters.employeeName}%` },
+            );
+        }
+        if (filters.document) {
+            queryBuilder.andWhere('employee.document = :document', { document: filters.document });
+        }
+        if (filters.positionId) {
+            queryBuilder.andWhere('jobPosition.id = :positionId', { positionId: filters.positionId });
+        }
+        if (filters.status === 'Activo') {
+            queryBuilder.andWhere('disabilityLeave.end_date >= CURRENT_DATE');
+        }
+        if (filters.status === 'Finalizado') {
+            queryBuilder.andWhere('disabilityLeave.end_date < CURRENT_DATE');
+        }
+        // El rango de fechas filtra por la fecha de inicio de la incapacidad
+        // (criterio documentado en la HU, no por traslape de período)
         if (filters.startDate) {
-            queryBuilder.andWhere('disabilityLeave.end_date >= :startDate', { startDate: filters.startDate });
+            queryBuilder.andWhere('disabilityLeave.start_date >= :startDate', { startDate: filters.startDate });
         }
         if (filters.endDate) {
             queryBuilder.andWhere('disabilityLeave.start_date <= :endDate', { endDate: filters.endDate });
@@ -52,4 +73,5 @@ export class DisabilityLeaveTypeOrmRepository implements DisabilityLeaveReposito
             .andWhere('disabilityLeave.end_date >= :startDate', { startDate })
             .getMany();
     }
+
 }

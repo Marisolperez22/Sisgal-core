@@ -118,8 +118,18 @@ export class DisabilityLeaveService {
     }
   }
 
-  // Búsqueda por empleado y/o rango de fechas; ambos filtros son opcionales y se combinan con AND
+  // Búsqueda por empleado, nombre, cargo, estado y/o rango de fechas; todos los filtros son opcionales y se combinan con AND
   async findAll(query: ListDisabilityLeaveQueryDto): Promise<DisabilityLeave[]> {
+    if (
+      query.startDate &&
+      query.endDate &&
+      query.startDate > query.endDate
+    ) {
+      throw new BadRequestException(
+        'La fecha inicial no puede ser posterior a la fecha final.',
+      );
+    }
+
     return this.disabilityLeaveRepository.findAll(query);
   }
 }
