@@ -14,12 +14,6 @@ export type DisabilityLeaveListFilters = {
   endDate?: string;
 };
 
-// Solo contempla incapacidades en estado Activo (end_date >= hoy)
-export interface DisabilityLeaveIndicators {
-  activeCount: number;
-  totalActiveDays: number;
-}
-
 export interface DisabilityLeaveRepositoryPort {
   save(disabilityLeave: DisabilityLeave): Promise<DisabilityLeave>;
   findAll(filters: DisabilityLeaveListFilters): Promise<DisabilityLeave[]>;
@@ -29,5 +23,4 @@ export interface DisabilityLeaveRepositoryPort {
     startDate: string,
     endDate: string,
   ): Promise<DisabilityLeave[]>;
-  getIndicators(): Promise<DisabilityLeaveIndicators>;
 }

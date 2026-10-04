@@ -23,12 +23,10 @@ describe('DisabilityLeaveService', () => {
     save: jest.Mock;
     findAll: jest.Mock;
     findOverlapping: jest.Mock;
-    getIndicators: jest.Mock;
   } = {
     save: jest.fn(),
     findAll: jest.fn(),
     findOverlapping: jest.fn(),
-    getIndicators: jest.fn(),
   };
 
   const employeeRepositoryMock: {
@@ -281,23 +279,6 @@ describe('DisabilityLeaveService', () => {
     });
   });
 
-  // =========================================================
-  // getIndicators
-  // =========================================================
-
-  describe('getIndicators', () => {
-    it('debe delegar al repositorio y retornar los indicadores', async () => {
-      disabilityLeaveRepositoryMock.getIndicators.mockResolvedValue({
-        activeCount: 3,
-        totalActiveDays: 12,
-      });
-
-      const resultado = await service.getIndicators();
-
-      expect(resultado).toEqual({ activeCount: 3, totalActiveDays: 12 });
-      expect(disabilityLeaveRepositoryMock.getIndicators).toHaveBeenCalledTimes(1);
-    });
-  });
 });
 
 // =========================================================

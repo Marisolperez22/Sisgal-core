@@ -86,7 +86,7 @@ describe('DisabilityLeaveTypeOrmRepository', () => {
         ],
         ['employee.document = :document', { document: '1020304050' }],
         ['jobPosition.id = :positionId', { positionId: 2 }],
-        ['disabilityLeave.end_date >= :startDate', { startDate: '2026-09-01' }],
+        ['disabilityLeave.start_date >= :startDate', { startDate: '2026-09-01' }],
         ['disabilityLeave.start_date <= :endDate', { endDate: '2026-09-30' }],
       ]);
       expect(queryBuilder.getMany).toHaveBeenCalled();
@@ -118,38 +118,6 @@ describe('DisabilityLeaveTypeOrmRepository', () => {
       expect(queryBuilder.andWhere).toHaveBeenCalledWith(
         'disabilityLeave.end_date < CURRENT_DATE',
       );
-    });
-  });
-
-  describe('getIndicators', () => {
-    it('debe calcular en una consulta la cantidad y el total de días activos', async () => {
-      queryBuilder.getRawOne.mockResolvedValue({
-        activeCount: '3',
-        totalActiveDays: '12',
-      });
-
-      const resultado = await repository.getIndicators();
-
-      expect(resultado).toEqual({ activeCount: 3, totalActiveDays: 12 });
-      expect(queryBuilder.select).toHaveBeenCalledWith(
-        'COUNT(disabilityLeave.id)',
-        'activeCount',
-      );
-      expect(queryBuilder.addSelect).toHaveBeenCalledWith(
-        'COALESCE(SUM(disabilityLeave.total_days), 0)',
-        'totalActiveDays',
-      );
-      expect(queryBuilder.where).toHaveBeenCalledWith(
-        'disabilityLeave.end_date >= CURRENT_DATE',
-      );
-    });
-
-    it('debe retornar indicadores en cero cuando la agregación no tiene resultado', async () => {
-      queryBuilder.getRawOne.mockResolvedValue(undefined);
-
-      const resultado = await repository.getIndicators();
-
-      expect(resultado).toEqual({ activeCount: 0, totalActiveDays: 0 });
     });
   });
 

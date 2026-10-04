@@ -48,7 +48,7 @@ export class ListDisabilityLeaveQueryDto {
   status?: DisabilityStatus;
 
   @ApiPropertyOptional({
-    description: 'Filtra registros cuyo período incluya esta fecha o sea posterior a ella',
+    description: 'Filtra registros cuya fecha de inicio sea igual o posterior a esta fecha',
     example: '2026-09-01',
   })
   @IsOptional()
@@ -56,7 +56,7 @@ export class ListDisabilityLeaveQueryDto {
   startDate?: string;
 
   @ApiPropertyOptional({
-    description: 'Filtra registros cuyo período incluya esta fecha o sea anterior a ella',
+    description: 'Filtra registros cuya fecha de inicio sea igual o anterior a esta fecha',
     example: '2026-09-30',
   })
   @IsOptional()

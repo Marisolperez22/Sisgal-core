@@ -5,7 +5,6 @@ import { DisabilityLeave } from "src/entities/disability_leave.model";
 import {
     DisabilityLeaveRepositoryPort,
     DisabilityLeaveListFilters,
-    DisabilityLeaveIndicators,
 } from "src/modules/incapacidades/domain/ports/disability-leave-repository.port";
 
 @Injectable()
@@ -47,8 +46,10 @@ export class DisabilityLeaveTypeOrmRepository implements DisabilityLeaveReposito
         if (filters.status === 'Finalizado') {
             queryBuilder.andWhere('disabilityLeave.end_date < CURRENT_DATE');
         }
+        // El rango de fechas filtra por la fecha de inicio de la incapacidad
+        // (criterio documentado en la HU, no por traslape de período)
         if (filters.startDate) {
-            queryBuilder.andWhere('disabilityLeave.end_date >= :startDate', { startDate: filters.startDate });
+            queryBuilder.andWhere('disabilityLeave.start_date >= :startDate', { startDate: filters.startDate });
         }
         if (filters.endDate) {
             queryBuilder.andWhere('disabilityLeave.start_date <= :endDate', { endDate: filters.endDate });
@@ -73,17 +74,4 @@ export class DisabilityLeaveTypeOrmRepository implements DisabilityLeaveReposito
             .getMany();
     }
 
-    async getIndicators(): Promise<DisabilityLeaveIndicators> {
-        const result = await this.repository
-            .createQueryBuilder('disabilityLeave')
-            .select('COUNT(disabilityLeave.id)', 'activeCount')
-            .addSelect('COALESCE(SUM(disabilityLeave.total_days), 0)', 'totalActiveDays')
-            .where('disabilityLeave.end_date >= CURRENT_DATE')
-            .getRawOne<{ activeCount: string; totalActiveDays: string }>();
-
-        return {
-            activeCount: Number(result?.activeCount ?? 0),
-            totalActiveDays: Number(result?.totalActiveDays ?? 0),
-        };
-    }
 }

@@ -132,8 +132,4 @@ export class DisabilityLeaveService {
 
     return this.disabilityLeaveRepository.findAll(query);
   }
-
-  async getIndicators(): Promise<disabilityLeaveRepositoryPort.DisabilityLeaveIndicators> {
-    return this.disabilityLeaveRepository.getIndicators();
-  }
 }
