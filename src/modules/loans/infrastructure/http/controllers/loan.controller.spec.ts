@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtAuthGuard } from 'src/infraestructure/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/infraestructure/auth/guards/roles.guard';
 import { LoanService } from '../../../application/services/loan.service';
+import { CreateLoanDto } from '../dtos/create-loan.dto';
 import { LoanQueryDto } from '../dtos/loan-query.dto';
 import { LoanController } from './loan.controller';
 
@@ -9,6 +10,7 @@ describe('LoanController', () => {
   let controller: LoanController;
 
   const loanServiceMock = {
+    crear: jest.fn(),
     obtenerTodos: jest.fn(),
     obtenerIndicadores: jest.fn(),
   };
@@ -40,6 +42,22 @@ describe('LoanController', () => {
     expect(controller).toBeDefined();
   });
 
+  describe('crear', () => {
+    it('delega los datos del préstamo al servicio', async () => {
+      const dto = {
+        employeeId: 7,
+        totalAmount: 1000,
+        totalInstallments: 4,
+        grantedAt: '2026-03-10',
+      } as CreateLoanDto;
+      const loan = { id: 1 };
+      loanServiceMock.crear.mockResolvedValue(loan);
+
+      await expect(controller.crear(dto)).resolves.toBe(loan);
+      expect(loanServiceMock.crear).toHaveBeenCalledWith(dto);
+    });
+  });
+
   describe('obtenerTodos', () => {
     it('delega los filtros al servicio y retorna los préstamos', async () => {
       const query = {
@@ -59,9 +77,9 @@ describe('LoanController', () => {
     it('retorna una lista vacía cuando el servicio no encuentra préstamos', async () => {
       loanServiceMock.obtenerTodos.mockResolvedValue([]);
 
-      await expect(controller.obtenerTodos(new LoanQueryDto())).resolves.toEqual(
-        [],
-      );
+      await expect(
+        controller.obtenerTodos(new LoanQueryDto()),
+      ).resolves.toEqual([]);
       expect(loanServiceMock.obtenerTodos).toHaveBeenCalledWith(
         new LoanQueryDto(),
       );

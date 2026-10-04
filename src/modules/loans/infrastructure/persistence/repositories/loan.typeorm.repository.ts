@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { EmployeeLoan } from 'src/entities';
+import { Employee, EmployeeLoan } from 'src/entities';
 import {
   LoanFilters,
   LoanIndicators,
@@ -14,7 +14,17 @@ export class LoanTypeOrmRepository implements LoanRepositoryPort {
   constructor(
     @InjectRepository(EmployeeLoan)
     private readonly repository: Repository<EmployeeLoan>,
+    @InjectRepository(Employee)
+    private readonly employeeRepository: Repository<Employee>,
   ) {}
+
+  findEmployeeById(employeeId: number): Promise<Employee | null> {
+    return this.employeeRepository.findOneBy({ id: employeeId });
+  }
+
+  save(loan: EmployeeLoan): Promise<EmployeeLoan> {
+    return this.repository.save(loan);
+  }
 
   async findAll(filters: LoanFilters): Promise<EmployeeLoan[]> {
     const query = this.repository
