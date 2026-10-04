@@ -7,6 +7,7 @@ import { EmployeeModule } from './modules/empleados/employee.module';
 import { SucursalesModule } from './modules/sucursales/sucursales.module';
 import { CargosModule } from './modules/cargos/cargos.module';
 import { LoansModule } from './modules/loans/loans.module';
+import { DisabilityLeaveModule } from './modules/incapacidades/disability-leave.module';
 import { AsistenciaModule } from './modules/asistencia/asistencia.module';
 
 @Module({
@@ -16,6 +17,7 @@ import { AsistenciaModule } from './modules/asistencia/asistencia.module';
     SucursalesModule,
     CargosModule,
     LoansModule,
+    DisabilityLeaveModule,
     AsistenciaModule,
   ],
   controllers: [AppController],

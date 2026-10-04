@@ -21,6 +21,12 @@ export class DisabilityLeave {
   @Column('int')
   eps_days!: number;
 
+  @Column('varchar', { length: 40, nullable: false })
+  type!: string;
+
+  @Column('varchar', { length: 200, nullable: true })
+  other_type_description!: string | null;
+
   @ManyToOne(() => Employee, (employee) => employee.disability_leaves)
   @JoinColumn({ name: 'employee_id' })
   employee!: Employee;
