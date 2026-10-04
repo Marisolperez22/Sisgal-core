@@ -22,6 +22,14 @@ export class ListDisabilityLeaveQueryDto {
   employeeName?: string;
 
   @ApiPropertyOptional({
+    description: 'Filtra por el número de documento exacto del empleado',
+    example: '1020304050',
+  })
+  @IsOptional()
+  @IsString()
+  document?: string;
+
+  @ApiPropertyOptional({
     description: 'Filtra por el identificador del cargo del empleado',
     example: 1,
   })

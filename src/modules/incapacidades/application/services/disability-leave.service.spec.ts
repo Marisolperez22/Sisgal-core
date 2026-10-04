@@ -23,10 +23,12 @@ describe('DisabilityLeaveService', () => {
     save: jest.Mock;
     findAll: jest.Mock;
     findOverlapping: jest.Mock;
+    getIndicators: jest.Mock;
   } = {
     save: jest.fn(),
     findAll: jest.fn(),
     findOverlapping: jest.fn(),
+    getIndicators: jest.fn(),
   };
 
   const employeeRepositoryMock: {
@@ -260,6 +262,40 @@ describe('DisabilityLeaveService', () => {
       expect(disabilityLeaveRepositoryMock.findAll).toHaveBeenCalledWith({
         employeeId: 5,
       });
+    });
+
+    it('debe lanzar BadRequestException cuando la fecha inicial es posterior a la final', async () => {
+      await expect(
+        service.findAll({ startDate: '2026-09-15', endDate: '2026-09-10' }),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(disabilityLeaveRepositoryMock.findAll).not.toHaveBeenCalled();
+    });
+
+    it('no debe lanzar error cuando las fechas están en orden válido', async () => {
+      disabilityLeaveRepositoryMock.findAll.mockResolvedValue([]);
+
+      await expect(
+        service.findAll({ startDate: '2026-09-01', endDate: '2026-09-30' }),
+      ).resolves.toEqual([]);
+    });
+  });
+
+  // =========================================================
+  // getIndicators
+  // =========================================================
+
+  describe('getIndicators', () => {
+    it('debe delegar al repositorio y retornar los indicadores', async () => {
+      disabilityLeaveRepositoryMock.getIndicators.mockResolvedValue({
+        activeCount: 3,
+        totalActiveDays: 12,
+      });
+
+      const resultado = await service.getIndicators();
+
+      expect(resultado).toEqual({ activeCount: 3, totalActiveDays: 12 });
+      expect(disabilityLeaveRepositoryMock.getIndicators).toHaveBeenCalledTimes(1);
     });
   });
 });

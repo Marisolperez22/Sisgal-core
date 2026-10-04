@@ -15,6 +15,7 @@ import { DisabilityLeaveService } from 'src/modules/incapacidades/application/se
 import { RegisterDisabilityLeaveDto } from '../dtos/register-disability-leave.dto';
 import { ListDisabilityLeaveQueryDto } from '../dtos/list-disability-leave-query.dto';
 import { DisabilityLeaveResponseDto } from '../dtos/disability-leave-response.dto';
+import { DisabilityLeaveIndicatorsResponseDto } from '../dtos/disability-leave-indicators-response.dto';
 import { Roles } from '../../../../../infraestructure/auth/decorators/roles.decorator';
 import { Role } from '../../../../../application/ports/auth/auth-user';
 import type { AuthUser } from '../../../../../application/ports/auth/auth-user';
@@ -63,16 +64,42 @@ export class DisabilityLeaveController {
         return DisabilityLeaveResponseDto.fromEntity(disabilityLeave);
     }
 
+    @Get('indicadores')
+    @ApiOperation({
+        summary: 'Obtener indicadores de incapacidades activas',
+        description:
+            'Retorna en una sola consulta la cantidad y el total de días de las incapacidades que actualmente están en estado Activo.',
+    })
+    @ApiOkResponse({
+        description: 'Indicadores obtenidos correctamente.',
+        type: DisabilityLeaveIndicatorsResponseDto,
+    })
+    @ApiInternalServerErrorResponse({
+        description: 'Se produjo un error interno al consultar los indicadores.',
+        type: ErrorResponseDto,
+    })
+    async getIndicators(): Promise<DisabilityLeaveIndicatorsResponseDto> {
+        const indicators = await this.disabilityLeaveService.getIndicators();
+        const response = new DisabilityLeaveIndicatorsResponseDto();
+        response.activeCount = indicators.activeCount;
+        response.totalActiveDays = indicators.totalActiveDays;
+        return response;
+    }
+
     @Get()
     @ApiOperation({
         summary: 'Listar incapacidades',
         description:
-            'Lista las incapacidades y licencias registradas, con filtros opcionales por empleado y rango de fechas.',
+            'Lista las incapacidades y licencias registradas, con filtros opcionales por empleado, nombre, cargo, estado y rango de fechas.',
     })
     @ApiOkResponse({
         description: 'Incapacidades obtenidas correctamente.',
         type: DisabilityLeaveResponseDto,
         isArray: true,
+    })
+    @ApiBadRequestResponse({
+        description: 'El rango de fechas no es válido (fecha inicial posterior a la final).',
+        type: ErrorResponseDto,
     })
     @ApiInternalServerErrorResponse({
         description: 'Se produjo un error interno al consultar las incapacidades.',

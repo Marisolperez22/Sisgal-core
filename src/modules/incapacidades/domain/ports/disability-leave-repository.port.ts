@@ -7,11 +7,18 @@ export const DISABILITY_LEAVE_REPOSITORY_PORT = Symbol('DISABILITY_LEAVE_REPOSIT
 export type DisabilityLeaveListFilters = {
   employeeId?: number;
   employeeName?: string;
+  document?: string;
   positionId?: number;
   status?: DisabilityStatus;
   startDate?: string;
   endDate?: string;
 };
+
+// Solo contempla incapacidades en estado Activo (end_date >= hoy)
+export interface DisabilityLeaveIndicators {
+  activeCount: number;
+  totalActiveDays: number;
+}
 
 export interface DisabilityLeaveRepositoryPort {
   save(disabilityLeave: DisabilityLeave): Promise<DisabilityLeave>;
@@ -22,4 +29,5 @@ export interface DisabilityLeaveRepositoryPort {
     startDate: string,
     endDate: string,
   ): Promise<DisabilityLeave[]>;
+  getIndicators(): Promise<DisabilityLeaveIndicators>;
 }
