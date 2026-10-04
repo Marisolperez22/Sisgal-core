@@ -24,4 +24,10 @@ export interface AttendanceHistoryPage {
 
 export interface AttendanceRecordRepositoryPort {
   findHistory(filters: AttendanceHistoryFilters): Promise<AttendanceHistoryPage>;
+
+  /**
+   * Registros cuya entrada está en el rango [desde, hasta), con su empleado y
+   * sucursal, ordenados por hora de entrada.
+   */
+  findCheckInsBetween(desde: Date, hasta: Date): Promise<AttendanceRecord[]>;
 }

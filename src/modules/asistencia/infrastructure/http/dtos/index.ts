@@ -7,3 +7,7 @@ export {
   AttendanceHistoryItemDto,
   AttendanceHistoryResponseDto,
 } from './attendance-history-response.dto';
+export {
+  AttendanceTodayEmployeeDto,
+  AttendanceTodayResponseDto,
+} from './attendance-today-response.dto';
