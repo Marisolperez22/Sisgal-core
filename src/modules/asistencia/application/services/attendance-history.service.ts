@@ -2,6 +2,11 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { AUDIT_PORT } from 'src/application/ports/audit/audit.port';
 import type { AuditPort } from 'src/application/ports/audit/audit.port';
 import {
+  fechaActual,
+  inicioDelDia,
+  inicioDelDiaSiguiente,
+} from '../../domain/business-day';
+import {
   ATTENDANCE_RECORD_REPOSITORY_PORT,
   type AttendanceRecordRepositoryPort,
 } from '../../domain/ports/attendance-record.repository.port';
@@ -10,14 +15,9 @@ import {
   HistorialAsistenciaQueryDto,
 } from '../../infrastructure/http/dtos';
 
-/** Zona horaria de operación del restaurante. Colombia no tiene horario de verano. */
-const ZONA_HORARIA = 'America/Bogota';
-const DESFASE_UTC = '-05:00';
-
 const FECHA_MINIMA = '1900-01-01';
 const PAGINA_INICIAL = 1;
 const RESULTADOS_POR_DEFECTO = 10;
-const MILISEGUNDOS_POR_DIA = 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AttendanceHistoryService {
@@ -50,11 +50,9 @@ export class AttendanceHistoryService {
       const { records, total } =
         await this.attendanceRecordRepository.findHistory({
           empleadoId: query.empleadoId,
-          desde: query.fechaDesde
-            ? this.inicioDelDia(query.fechaDesde)
-            : undefined,
+          desde: query.fechaDesde ? inicioDelDia(query.fechaDesde) : undefined,
           hasta: query.fechaHasta
-            ? this.inicioDelDiaSiguiente(query.fechaHasta)
+            ? inicioDelDiaSiguiente(query.fechaHasta)
             : undefined,
           estado: query.estado,
           pagina,
@@ -104,7 +102,7 @@ export class AttendanceHistoryService {
       );
     }
 
-    if (fechaHasta && fechaHasta > this.fechaActual()) {
+    if (fechaHasta && fechaHasta > fechaActual()) {
       throw new BadRequestException(
         'La fecha final no puede ser posterior a la fecha actual.',
       );
@@ -115,20 +113,5 @@ export class AttendanceHistoryService {
         'El rango de fechas seleccionado no es válido: la fecha inicial no puede ser posterior a la fecha final.',
       );
     }
-  }
-
-  /** Fecha de hoy (YYYY-MM-DD) en la zona horaria de operación. */
-  private fechaActual(): string {
-    return new Intl.DateTimeFormat('en-CA', {
-      timeZone: ZONA_HORARIA,
-    }).format(new Date());
-  }
-
-  private inicioDelDia(fecha: string): Date {
-    return new Date(`${fecha}T00:00:00${DESFASE_UTC}`);
-  }
-
-  private inicioDelDiaSiguiente(fecha: string): Date {
-    return new Date(this.inicioDelDia(fecha).getTime() + MILISEGUNDOS_POR_DIA);
   }
 }

@@ -13,12 +13,14 @@ describe('AttendanceRecordTypeOrmRepository', () => {
   const queryBuilderMock = {
     innerJoinAndSelect: jest.fn(),
     leftJoinAndSelect: jest.fn(),
+    where: jest.fn(),
     andWhere: jest.fn(),
     orderBy: jest.fn(),
     addOrderBy: jest.fn(),
     offset: jest.fn(),
     limit: jest.fn(),
     getManyAndCount: jest.fn(),
+    getMany: jest.fn(),
   };
 
   const attendanceRecordRepositoryMock = {
@@ -31,12 +33,14 @@ describe('AttendanceRecordTypeOrmRepository', () => {
     );
     queryBuilderMock.innerJoinAndSelect.mockReturnValue(queryBuilderMock);
     queryBuilderMock.leftJoinAndSelect.mockReturnValue(queryBuilderMock);
+    queryBuilderMock.where.mockReturnValue(queryBuilderMock);
     queryBuilderMock.andWhere.mockReturnValue(queryBuilderMock);
     queryBuilderMock.orderBy.mockReturnValue(queryBuilderMock);
     queryBuilderMock.addOrderBy.mockReturnValue(queryBuilderMock);
     queryBuilderMock.offset.mockReturnValue(queryBuilderMock);
     queryBuilderMock.limit.mockReturnValue(queryBuilderMock);
     queryBuilderMock.getManyAndCount.mockResolvedValue([[], 0]);
+    queryBuilderMock.getMany.mockResolvedValue([]);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -176,6 +180,62 @@ describe('AttendanceRecordTypeOrmRepository', () => {
       await expect(
         repository.findHistory({ pagina: 1, porPagina: 10 }),
       ).resolves.toEqual({ records: registros, total: 57 });
+    });
+  });
+
+  describe('findCheckInsBetween', () => {
+    const desde = new Date('2026-10-04T05:00:00.000Z');
+    const hasta = new Date('2026-10-05T05:00:00.000Z');
+
+    it('debe cargar el empleado y la sucursal de cada registro', async () => {
+      await repository.findCheckInsBetween(desde, hasta);
+
+      expect(
+        attendanceRecordRepositoryMock.createQueryBuilder,
+      ).toHaveBeenCalledWith('record');
+      expect(queryBuilderMock.innerJoinAndSelect).toHaveBeenCalledWith(
+        'record.employee',
+        'employee',
+      );
+      expect(queryBuilderMock.leftJoinAndSelect).toHaveBeenCalledWith(
+        'record.branch',
+        'branch',
+      );
+    });
+
+    it('debe filtrar las entradas dentro del rango, sin incluir el límite final', async () => {
+      await repository.findCheckInsBetween(desde, hasta);
+
+      expect(queryBuilderMock.where).toHaveBeenCalledWith(
+        'record.check_in >= :desde',
+        { desde },
+      );
+      expect(queryBuilderMock.andWhere).toHaveBeenCalledWith(
+        'record.check_in < :hasta',
+        { hasta },
+      );
+    });
+
+    it('debe ordenar por hora de entrada para identificar la primera del día', async () => {
+      await repository.findCheckInsBetween(desde, hasta);
+
+      expect(queryBuilderMock.orderBy).toHaveBeenCalledWith(
+        'record.check_in',
+        'ASC',
+      );
+      expect(queryBuilderMock.addOrderBy).toHaveBeenCalledWith(
+        'record.id',
+        'ASC',
+      );
+    });
+
+    it('debe retornar los registros encontrados', async () => {
+      const registros = [new AttendanceRecord()];
+      queryBuilderMock.getMany.mockResolvedValue(registros);
+
+      await expect(repository.findCheckInsBetween(desde, hasta)).resolves.toBe(
+        registros,
+      );
     });
   });
 });

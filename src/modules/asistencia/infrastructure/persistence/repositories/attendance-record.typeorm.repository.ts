@@ -56,4 +56,19 @@ export class AttendanceRecordTypeOrmRepository implements AttendanceRecordReposi
 
     return { records, total };
   }
+
+  async findCheckInsBetween(
+    desde: Date,
+    hasta: Date,
+  ): Promise<AttendanceRecord[]> {
+    return this.repository
+      .createQueryBuilder('record')
+      .innerJoinAndSelect('record.employee', 'employee')
+      .leftJoinAndSelect('record.branch', 'branch')
+      .where('record.check_in >= :desde', { desde })
+      .andWhere('record.check_in < :hasta', { hasta })
+      .orderBy('record.check_in', 'ASC')
+      .addOrderBy('record.id', 'ASC')
+      .getMany();
+  }
 }
