@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { dataSourceOptions } from './config/DataSource';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { EmployeeModule } from './modules/empleados/employee.module';
@@ -18,7 +16,7 @@ import { DisabilityLeaveModule } from './modules/incapacidades/disability-leave.
     LoansModule,
     DisabilityLeaveModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

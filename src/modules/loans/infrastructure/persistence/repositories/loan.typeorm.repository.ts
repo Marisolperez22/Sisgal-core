@@ -26,6 +26,14 @@ export class LoanTypeOrmRepository implements LoanRepositoryPort {
     return this.repository.save(loan);
   }
 
+  findById(loanId: number): Promise<EmployeeLoan | null> {
+    return this.repository
+      .createQueryBuilder('loan')
+      .leftJoinAndSelect('loan.employee', 'employee')
+      .where('loan.id = :loanId', { loanId })
+      .getOne();
+  }
+
   async findAll(filters: LoanFilters): Promise<EmployeeLoan[]> {
     const query = this.repository
       .createQueryBuilder('loan')

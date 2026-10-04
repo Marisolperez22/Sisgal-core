@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -7,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { Role } from 'src/application/ports/auth/auth-user';
@@ -65,6 +75,37 @@ export class LoanController {
   })
   obtenerIndicadores(): Promise<LoanIndicatorsResponseDto> {
     return this.loanService.obtenerIndicadores();
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Obtener préstamo por identificador',
+    description:
+      'Retorna un préstamo con la misma información del empleado y del préstamo que la consulta de listado.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del préstamo',
+    example: 1,
+    type: Number,
+  })
+  @ApiOkResponse({
+    description: 'Préstamo obtenido correctamente.',
+    type: LoanResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'El identificador del préstamo debe ser un entero válido.',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el préstamo indicado.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Se produjo un error interno al consultar el préstamo.',
+  })
+  obtenerPorId(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<LoanResponseDto> {
+    return this.loanService.obtenerPorId(id);
   }
 
   @Get()

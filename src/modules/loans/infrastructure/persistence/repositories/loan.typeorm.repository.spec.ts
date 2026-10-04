@@ -13,6 +13,7 @@ describe('LoanTypeOrmRepository', () => {
     orderBy: jest.fn(),
     addOrderBy: jest.fn(),
     getMany: jest.fn(),
+    getOne: jest.fn(),
     getRawOne: jest.fn(),
   };
   const employeeLoanRepository = {
@@ -51,6 +52,22 @@ describe('LoanTypeOrmRepository', () => {
 
     expect(employeeRepository.findOneBy).toHaveBeenCalledWith({ id: 7 });
     expect(employeeLoanRepository.save).toHaveBeenCalledWith(loan);
+  });
+
+  it('busca un préstamo por id y carga el empleado asociado', async () => {
+    const loan = { id: 3 } as EmployeeLoan;
+    queryBuilder.getOne.mockResolvedValue(loan);
+
+    await expect(repository.findById(3)).resolves.toBe(loan);
+
+    expect(queryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+      'loan.employee',
+      'employee',
+    );
+    expect(queryBuilder.where).toHaveBeenCalledWith('loan.id = :loanId', {
+      loanId: 3,
+    });
+    expect(queryBuilder.getOne).toHaveBeenCalled();
   });
 
   it('combina todos los filtros mediante AND y carga el empleado', async () => {
