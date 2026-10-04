@@ -37,5 +37,8 @@ import { WinstonAuditAdapter } from '../../infraestructure/logging/winston/winst
             useClass: WinstonAuditAdapter,
         },
     ],
+    // Se expone el port para que otros módulos (ej. incapacidades) puedan
+    // validar que el empleado exista y esté activo
+    exports: [EMPLOYEE_REPOSITORY_PORT],
 })
 export class EmployeeModule {}
