@@ -63,6 +63,17 @@ export class LoanService {
     return loans.map((loan) => LoanResponseDto.fromEntity(loan));
   }
 
+  async obtenerPorId(loanId: number): Promise<LoanResponseDto> {
+    const loan = await this.loanRepository.findById(loanId);
+    if (!loan) {
+      throw new NotFoundException(
+        `No se encontró el préstamo con identificador ${loanId}.`,
+      );
+    }
+
+    return LoanResponseDto.fromEntity(loan);
+  }
+
   async obtenerIndicadores(): Promise<LoanIndicatorsResponseDto> {
     const indicators: LoanIndicators =
       await this.loanRepository.getIndicators();
