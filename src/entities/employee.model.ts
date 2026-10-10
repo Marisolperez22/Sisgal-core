@@ -54,10 +54,6 @@ export class Employee {
   @Column('varchar', { length: 40, nullable: false })
   status!: string;
 
-  @ManyToOne(() => WorkdayConfig, (workdayConfig) => workdayConfig.employees)
-  @JoinColumn({ name: 'workday_config_id' })
-  workdayConfig!: WorkdayConfig;
-
   // Historial de sedes del empleado; cascade insert crea la asignación junto con el
   // empleado, y cascade update permite cerrar (is_current/end_date) la asignación
   // vigente al reasignar de sucursal sin tener que guardarla aparte.
