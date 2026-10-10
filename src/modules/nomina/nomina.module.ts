@@ -4,13 +4,17 @@ import { WorkRateConfig } from 'src/entities/work-rate-config.model';
 import { WorkdayConfig } from 'src/entities/workday-config.model';
 import { PayrollHoursService } from './application/services/payroll-hours.service';
 import { PAYROLL_HOURS_REPOSITORY_PORT } from './domain/ports/payroll-hours.repository.port';
-import { PayrollHoursController } from './infrastructure/http/controllers/payroll-hours.controller';
 import { PayrollHoursTypeOrmRepository } from './infrastructure/persistence/repositories/payroll-hours.typeorm.repository';
 import { AuthModule } from 'src/infraestructure/auth/auth.module';
 import { AsistenciaModule } from '../asistencia/asistencia.module';
 import { ATTENDANCE_RECORD_REPOSITORY_PORT } from '../asistencia/domain/ports/attendance-record.repository.port';
 import { AttendanceRecordTypeOrmRepository } from '../asistencia/infrastructure/persistence/repositories/attendance-record.typeorm.repository';
-import { AttendanceRecord, Holiday } from 'src/entities';
+import { AttendanceRecord, Holiday, SystemConfig } from 'src/entities';
+import { NominaService } from './application/services/nomina.service';
+import { NominaController } from './infrastructure/http/controllers/nomina.controller';
+import { LegalDeductionsService } from './application/services/legal-deductions.service';
+import { SYSTEM_CONFIG_REPOSITORY_PORT } from './domain/ports/system-config-repository.port';
+import { SystemConfigTypeOrmRepository } from './infrastructure/persistence/repositories/system-config.typeorm.repository';
 
 @Module({
   imports: [
@@ -21,11 +25,18 @@ import { AttendanceRecord, Holiday } from 'src/entities';
       WorkRateConfig,
       AttendanceRecord,
       Holiday,
+      SystemConfig,
     ]),
   ],
-  controllers: [PayrollHoursController],
+  controllers: [NominaController],
   providers: [
+    NominaService,
     PayrollHoursService,
+    LegalDeductionsService,
+    {
+      provide: SYSTEM_CONFIG_REPOSITORY_PORT,
+      useClass: SystemConfigTypeOrmRepository,
+    },
     {
       provide: PAYROLL_HOURS_REPOSITORY_PORT,
       useClass: PayrollHoursTypeOrmRepository,
@@ -35,6 +46,6 @@ import { AttendanceRecord, Holiday } from 'src/entities';
       useClass: AttendanceRecordTypeOrmRepository,
     },
   ],
-  exports: [PayrollHoursService],
+  exports: [NominaService, LegalDeductionsService],
 })
-export class PayrollHoursModule {}
+export class NominaModule {}
