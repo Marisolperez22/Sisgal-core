@@ -1,0 +1,79 @@
+import { ApiProperty } from '@nestjs/swagger';
+import { PayrollPeriod } from '../../../../../entities/payroll-period.model';
+
+export class PayrollPeriodResponseDto {
+  @ApiProperty({
+    description: 'Identificador único de la liquidación',
+    example: 1,
+  })
+  id!: number;
+
+  @ApiProperty({
+    description: 'Identificador del empleado asociado',
+    example: 1,
+  })
+  employeeId!: number;
+
+  @ApiProperty({
+    description: 'Nombre completo del empleado asociado',
+    example: 'Juan Pérez',
+  })
+  employeeName!: string;
+
+  @ApiProperty({
+    description: 'Fecha de inicio del período',
+    example: '2026-09-01',
+  })
+  periodStart!: Date;
+
+  @ApiProperty({
+    description: 'Fecha de finalización del período',
+    example: '2026-09-30',
+  })
+  periodEnd!: Date;
+
+  @ApiProperty({
+    description: 'Fecha de liquidación (fecha de cierre del período)',
+    example: '2026-09-30',
+  })
+  settlementDate!: Date;
+
+  @ApiProperty({
+    description: 'Total devengado en el período',
+    example: 1800000,
+  })
+  totalEarnings!: number;
+
+  @ApiProperty({
+    description: 'Total de deducciones en el período',
+    example: 150000,
+  })
+  totalDeductions!: number;
+
+  @ApiProperty({
+    description: 'Neto a pagar',
+    example: 1650000,
+  })
+  netPay!: number;
+
+  @ApiProperty({
+    description: 'Estado de la liquidación. Todas las liquidaciones registradas están confirmadas.',
+    example: 'Confirmada',
+  })
+  status!: 'Confirmada';
+
+  static fromEntity(payrollPeriod: PayrollPeriod): PayrollPeriodResponseDto {
+    const dto = new PayrollPeriodResponseDto();
+    dto.id = payrollPeriod.id;
+    dto.employeeId = payrollPeriod.employee.id;
+    dto.employeeName = `${payrollPeriod.employee.firstName} ${payrollPeriod.employee.lastName}`;
+    dto.periodStart = payrollPeriod.period_start;
+    dto.periodEnd = payrollPeriod.period_end;
+    dto.settlementDate = payrollPeriod.period_end;
+    dto.totalEarnings = payrollPeriod.total_earnings;
+    dto.totalDeductions = payrollPeriod.total_deductions;
+    dto.netPay = payrollPeriod.net_pay;
+    dto.status = 'Confirmada';
+    return dto;
+  }
+}
