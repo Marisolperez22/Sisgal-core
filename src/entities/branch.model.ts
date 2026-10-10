@@ -21,7 +21,7 @@ export class Branch {
   name!: string;
 
   @Column('varchar', { length: 40, nullable: false })
-  city!: string
+  city!: string;
 
   @Column('varchar', { length: 20, nullable: true })
   phone?: string | null;
@@ -34,7 +34,7 @@ export class Branch {
 
   @ManyToOne(() => Company, (company) => company.branches)
   @JoinColumn({ name: 'company_id' })
-  company!: Company; 
+  company!: Company;
 
   @OneToMany(() => BranchConfig, (branchConfig) => branchConfig.branch)
   branchConfigs!: BranchConfig[];
@@ -45,7 +45,9 @@ export class Branch {
   @OneToMany(() => BiometricDevice, (device) => device.branch)
   biometricDevices!: BiometricDevice[];
 
-  @OneToMany(()=>AttendanceRecord, (attendance_record)=>attendance_record.employee)
+  @OneToMany(
+    () => AttendanceRecord,
+    (attendance_record) => attendance_record.employee,
+  )
   attendance_records!: AttendanceRecord[];
-  
 }
