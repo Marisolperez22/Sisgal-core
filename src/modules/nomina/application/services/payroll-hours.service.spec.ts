@@ -49,25 +49,29 @@ describe('PayrollHoursService', () => {
       night_start: '21:00',
       night_end: '06:00',
     } as WorkdayConfig;
+
     repository.findWorkdayConfig.mockResolvedValue(overnightConfig);
+
     repository.findWorkRateConfig.mockImplementation(async (type) => {
       return {
         ...rate,
         type,
         multiplier: type.includes('NOCTURNA') ? 1.25 : 1,
-        valid_from: new Date('2026-01-01'),
+        valid_from: new Date('2026-01-01T00:00:00-05:00'),
         valid_to: null,
       } as WorkRateConfig;
     });
 
-    const start = new Date('2026-03-10T20:00:00.000Z');
-    const end = new Date('2026-03-11T23:00:00.000Z');
+    // De 20:00 del 10 de marzo a 23:00 del 11 de marzo, hora colombiana.
+    const start = new Date('2026-03-10T20:00:00-05:00');
+    const end = new Date('2026-03-12T00:00:00-05:00');
+
     const result = await service.classifyWorkedInterval(7, start, end);
 
     expect(result).toEqual([
       expect.objectContaining({
-        start,
-        end: new Date('2026-03-10T21:00:00.000Z'),
+        start: new Date('2026-03-10T20:00:00-05:00'),
+        end: new Date('2026-03-10T21:00:00-05:00'),
         hours: 1,
         period: 'DIURNA',
         type: 'ORDINARIA_DIURNA',
@@ -75,8 +79,8 @@ describe('PayrollHoursService', () => {
         adjustedHours: 1,
       }),
       expect.objectContaining({
-        start: new Date('2026-03-10T21:00:00.000Z'),
-        end: new Date('2026-03-11T00:00:00.000Z'),
+        start: new Date('2026-03-10T21:00:00-05:00'),
+        end: new Date('2026-03-11T00:00:00-05:00'),
         hours: 3,
         period: 'NOCTURNA',
         type: 'ORDINARIA_NOCTURNA',
@@ -84,8 +88,8 @@ describe('PayrollHoursService', () => {
         adjustedHours: 3.75,
       }),
       expect.objectContaining({
-        start: new Date('2026-03-11T00:00:00.000Z'),
-        end: new Date('2026-03-11T06:00:00.000Z'),
+        start: new Date('2026-03-11T00:00:00-05:00'),
+        end: new Date('2026-03-11T06:00:00-05:00'),
         hours: 6,
         period: 'NOCTURNA',
         type: 'ORDINARIA_NOCTURNA',
@@ -93,8 +97,8 @@ describe('PayrollHoursService', () => {
         adjustedHours: 7.5,
       }),
       expect.objectContaining({
-        start: new Date('2026-03-11T20:00:00.000Z'),
-        end: new Date('2026-03-11T21:00:00.000Z'),
+        start: new Date('2026-03-11T20:00:00-05:00'),
+        end: new Date('2026-03-11T21:00:00-05:00'),
         hours: 1,
         period: 'DIURNA',
         type: 'ORDINARIA_DIURNA',
@@ -102,35 +106,28 @@ describe('PayrollHoursService', () => {
         adjustedHours: 1,
       }),
       expect.objectContaining({
-        start: new Date('2026-03-11T21:00:00.000Z'),
-        end: new Date('2026-03-11T22:00:00.000Z'),
+        start: new Date('2026-03-11T21:00:00-05:00'),
+        end: new Date('2026-03-11T22:00:00-05:00'),
         hours: 1,
         period: 'NOCTURNA',
         type: 'ORDINARIA_NOCTURNA',
         multiplier: 1.25,
         adjustedHours: 1.25,
       }),
+
       expect.objectContaining({
-        start: new Date('2026-03-11T22:00:00.000Z'),
-        end: new Date('2026-03-11T23:00:00.000Z'),
-        hours: 1,
+        start: new Date('2026-03-11T22:00:00-05:00'),
+        end: new Date('2026-03-12T00:00:00-05:00'),
+        hours: 2,
         period: 'NOCTURNA',
         type: 'EXTRA_NOCTURNA',
         multiplier: 1.25,
-        adjustedHours: 1.25,
-      }),
-      expect.objectContaining({
-        start: new Date('2026-03-11T23:00:00.000Z'),
-        end: new Date('2026-03-12T00:00:00.000Z'),
-        hours: 1,
-        period: 'NOCTURNA',
-        type: 'EXTRA_NOCTURNA',
-        multiplier: 1.25,
-        adjustedHours: 1.25,
+        adjustedHours: 2.5,
       }),
     ]);
+
     expect(repository.findWorkdayConfig).toHaveBeenCalledWith(start);
-    expect(repository.findWorkRateConfig).toHaveBeenCalledTimes(8);
+    expect(repository.findWorkRateConfig).toHaveBeenCalledTimes(6);
   });
 
   it('usa la configuración válida más reciente para la fecha de inicio', async () => {
@@ -142,11 +139,14 @@ describe('PayrollHoursService', () => {
       night_start: '20:00',
       night_end: '05:00',
     };
+
     repository.findWorkdayConfig.mockResolvedValue(currentConfig);
     repository.findWorkRateConfig.mockResolvedValue(rate);
 
-    const start = new Date('2026-07-01T09:00:00.000Z');
-    const end = new Date('2026-07-01T10:00:00.000Z');
+    // 09:00 a 10:00, hora colombiana (UTC-5).
+    const start = new Date('2026-07-01T09:00:00-05:00');
+    const end = new Date('2026-07-01T10:00:00-05:00');
+
     const result = await service.classifyWorkedInterval(7, start, end);
 
     expect(result).toEqual([
@@ -160,6 +160,7 @@ describe('PayrollHoursService', () => {
         adjustedHours: 1,
       }),
     ]);
+
     expect(repository.findWorkdayConfig).toHaveBeenCalledWith(start);
   });
 
@@ -189,6 +190,7 @@ describe('PayrollHoursService', () => {
 
   it('separa las horas ordinarias y extra dentro del mismo día', async () => {
     repository.findWorkdayConfig.mockResolvedValue(workdayConfig);
+
     repository.findWorkRateConfig.mockImplementation(
       async (type) =>
         ({
@@ -198,55 +200,75 @@ describe('PayrollHoursService', () => {
         }) as WorkRateConfig,
     );
 
-    const start = new Date('2026-03-11T08:00:00.000Z');
-    const end = new Date('2026-03-11T18:00:00.000Z');
+    // 08:00 a 18:00 en hora colombiana (UTC-5).
+    const start = new Date('2026-03-11T08:00:00-05:00');
+    const end = new Date('2026-03-11T18:00:00-05:00');
+
     const result = await service.classifyWorkedInterval(7, start, end);
 
     expect(result).toHaveLength(2);
+
     expect(result).toEqual([
       expect.objectContaining({
         start,
-        end: new Date('2026-03-11T16:00:00.000Z'),
+        end: new Date('2026-03-11T16:00:00-05:00'),
         hours: 8,
+        period: 'DIURNA',
+        dayType: 'ORDINARY',
+        isExtra: false,
         type: 'ORDINARIA_DIURNA',
         multiplier: 1,
         adjustedHours: 8,
       }),
       expect.objectContaining({
-        start: new Date('2026-03-11T16:00:00.000Z'),
-        end: new Date('2026-03-11T17:00:00.000Z'),
+        start: new Date('2026-03-11T16:00:00-05:00'),
+        end: new Date('2026-03-11T17:00:00-05:00'),
         hours: 1,
+        period: 'DIURNA',
+        dayType: 'ORDINARY',
+        isExtra: true,
         type: 'EXTRA_DIURNA',
         multiplier: 1.5,
         adjustedHours: 1.5,
       }),
     ]);
+
     expect(repository.findWorkRateConfig).toHaveBeenCalledTimes(2);
   });
 
-  it('claseifica un domingo como DOMINICAL y un festivo como HOLIDAY', async () => {
+  it('clasifica un domingo como DOMINICAL y un festivo como HOLIDAY', async () => {
     repository.findWorkdayConfig.mockResolvedValue(workdayConfig);
     repository.findWorkRateConfig.mockResolvedValue(rate);
+
+    const sundayStart = new Date('2026-03-15T08:00:00-05:00');
+    const sundayEnd = new Date('2026-03-15T09:00:00-05:00');
+
+    // El 15 de marzo de 2026 es domingo.
     repository.isHoliday.mockResolvedValueOnce(false);
 
-    const sunday = new Date('2026-03-15T08:00:00.000Z');
     const sundayResult = await service.classifyWorkedInterval(
       7,
-      sunday,
-      new Date('2026-03-15T09:00:00.000Z'),
+      sundayStart,
+      sundayEnd,
     );
+
     expect(sundayResult[0]).toMatchObject({
+      period: 'DIURNA',
       type: 'DOMINICAL_DIURNA',
       dayType: 'SUNDAY',
     });
 
+    // Simula que la fecha se encuentra registrada como festivo.
     repository.isHoliday.mockResolvedValueOnce(true);
+
     const holidayResult = await service.classifyWorkedInterval(
       7,
-      sunday,
-      new Date('2026-03-15T09:00:00.000Z'),
+      sundayStart,
+      sundayEnd,
     );
+
     expect(holidayResult[0]).toMatchObject({
+      period: 'DIURNA',
       type: 'DOMINICAL_DIURNA',
       dayType: 'HOLIDAY',
     });
