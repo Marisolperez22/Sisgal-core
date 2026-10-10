@@ -21,7 +21,7 @@ import { CreatePositionCatalog1790380800000 } from '../migrations/1790380800000-
 import { AddDisabilityLeaveType1791059891289 } from '../migrations/1791059891289-AddDisabilityLeaveType';
 import { AddDisabilityLeaveOtherTypeDescription1791060844659 } from '../migrations/1791060844659-AddDisabilityLeaveOtherTypeDescription';
 import { AllowIncompleteAttendanceRecord1791119213000 } from '../migrations/1791119213000-AllowIncompleteAttendanceRecord';
-import { EmployeeLoan } from 'src/entities';
+import { EmployeeLoan, Holiday } from 'src/entities';
 
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
@@ -44,7 +44,8 @@ export const dataSourceOptions: DataSourceOptions = {
     WorkRateConfig,
     WorkdayConfig,
     Position,
-    EmployeeLoan
+    EmployeeLoan,
+    Holiday
   ],
   ssl: { rejectUnauthorized: false },
   migrations: [
